@@ -1,0 +1,20 @@
+# IntelliJ
+.idea/
+*.iml
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/*.tsbuildinfo
+
+# Backend
+backend/target/
+
+# Logs
+backend/*.log
+*.log
+
+# OS
+Thumbs.db
+.DS_Store

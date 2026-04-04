@@ -1,0 +1,8 @@
+ALTER TABLE account
+    ADD COLUMN email VARCHAR(150) NULL,
+    ADD COLUMN full_name VARCHAR(150) NULL,
+    ADD COLUMN avatar_url VARCHAR(500) NULL,
+    ADD COLUMN auth_provider VARCHAR(30) NOT NULL DEFAULT 'LOCAL';
+
+ALTER TABLE account
+    ADD CONSTRAINT uk_account_email UNIQUE (email);

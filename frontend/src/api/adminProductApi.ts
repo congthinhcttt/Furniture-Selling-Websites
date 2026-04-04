@@ -1,0 +1,57 @@
+import axiosClient from "./axiosClient";
+import type { ApiResponse } from "../types/api";
+import type { LowStockProduct, Product } from "../types/product";
+
+export interface AdminProductPayload {
+  name: string;
+  description?: string;
+  price: number;
+  image?: string;
+  color?: string;
+  width: number;
+  length: number;
+  stockQuantity: number;
+  categoryId: number;
+}
+
+export interface ProductRestockPayload {
+  quantity: number;
+}
+
+export async function getAdminProducts() {
+  const response = await axiosClient.get<ApiResponse<Product[]>>("/api/admin/products");
+  return response.data.data;
+}
+
+export async function createAdminProduct(payload: AdminProductPayload) {
+  const response = await axiosClient.post<ApiResponse<Product>>("/api/admin/products", payload);
+  return response.data.data;
+}
+
+export async function updateAdminProduct(productId: number, payload: AdminProductPayload) {
+  const response = await axiosClient.put<ApiResponse<Product>>(
+    `/api/admin/products/${productId}`,
+    payload
+  );
+  return response.data.data;
+}
+
+export async function restockAdminProduct(productId: number, payload: ProductRestockPayload) {
+  const response = await axiosClient.post<ApiResponse<Product>>(
+    `/api/admin/products/${productId}/restock`,
+    payload
+  );
+  return response.data.data;
+}
+
+export async function deleteAdminProduct(productId: number) {
+  await axiosClient.delete<ApiResponse<null>>(`/api/admin/products/${productId}`);
+}
+
+export async function getLowStockProducts(threshold = 5) {
+  const response = await axiosClient.get<ApiResponse<LowStockProduct[]>>(
+    "/api/admin/products/low-stock",
+    { params: { threshold } }
+  );
+  return response.data.data;
+}

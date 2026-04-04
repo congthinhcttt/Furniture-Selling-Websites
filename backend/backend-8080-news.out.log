@@ -1,0 +1,1522 @@
+[INFO] Scanning for projects...
+[INFO] Loaded 22430 auto-discovered prefixes for remote repository central (prefixes-central.txt)
+[INFO] 
+[INFO] -----------------------< bai4_qlsp_LeBinh:demo >------------------------
+[INFO] Building bai4_qlsp_LeBinh 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] Could not transfer metadata /.meta/prefixes.txt from/to apache.snapshots-c1d4c55f9308e5ac18a4069bed41dca64d85c515 (https://repository.apache.org/snapshots): HTTP connect timed out
+[INFO] 
+[INFO] >>> spring-boot:4.0.3:run (default-cli) > test-compile @ demo >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ demo ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 48 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ demo ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ demo ---
+[INFO] skip non existing resourceDirectory C:\Users\Extreme\IdeaProjects\DoAncuoiKiJ2ee\backend\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ demo ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:4.0.3:run (default-cli) < test-compile @ demo <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:4.0.3:run (default-cli) @ demo ---
+[INFO] Loaded 50 auto-discovered prefixes for remote repository ow2-snapshot (prefixes-ow2-snapshot-40669f8efefaadb4c1705a2585cefc8851f735ac.txt)
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.0.3)
+
+2026-03-28T03:01:38.579+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [           main] b.demo.Bai4QlspLeBinhApplication         : Starting Bai4QlspLeBinhApplication using Java 21.0.7 with PID 96408 (C:\Users\Extreme\IdeaProjects\DoAncuoiKiJ2ee\backend\target\classes started by Extreme in C:\Users\Extreme\IdeaProjects\DoAncuoiKiJ2ee\backend)
+2026-03-28T03:01:38.583+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [           main] b.demo.Bai4QlspLeBinhApplication         : No active profile set, falling back to 1 default profile: "default"
+2026-03-28T03:01:39.275+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-03-28T03:01:39.366+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 74 ms. Found 10 JPA repository interfaces.
+2026-03-28T03:01:40.001+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-03-28T03:01:40.022+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-03-28T03:01:40.022+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.18]
+2026-03-28T03:01:40.075+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 1427 ms
+2026-03-28T03:01:40.332+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-03-28T03:01:40.413+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.4.Final
+2026-03-28T03:01:40.837+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-03-28T03:01:40.876+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-03-28T03:01:41.053+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@61bd0845
+2026-03-28T03:01:41.055+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-03-28T03:01:41.125+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:mysql://127.0.0.1:3306/furniture_shop?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh]
+	Database driver: MySQL Connector/J
+	Database dialect: MySQLDialect
+	Database version: 9.2
+	Default catalog/schema: furniture_shop/undefined
+	Autocommit mode: undefined/unknown
+	Isolation level: REPEATABLE_READ [default REPEATABLE_READ]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-03-28T03:01:42.284+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+Hibernate: 
+    create table news_article (
+        id bigint not null auto_increment,
+        content TEXT not null,
+        image varchar(500),
+        title varchar(255) not null,
+        topic varchar(120) not null,
+        primary key (id)
+    ) engine=InnoDB
+2026-03-28T03:01:42.424+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-03-28T03:01:42.561+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [           main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-03-28T03:01:43.206+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name accountService
+2026-03-28T03:01:43.919+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-03-28T03:01:43.926+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [           main] b.demo.Bai4QlspLeBinhApplication         : Started Bai4QlspLeBinhApplication in 5.797 seconds (process running for 6.364)
+Hibernate: 
+    select
+        count(*) 
+    from
+        news_article na1_0
+Hibernate: 
+    insert 
+    into
+        news_article
+        (content, image, title, topic) 
+    values
+        (?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        news_article
+        (content, image, title, topic) 
+    values
+        (?, ?, ?, ?)
+Hibernate: 
+    insert 
+    into
+        news_article
+        (content, image, title, topic) 
+    values
+        (?, ?, ?, ?)
+2026-03-28T03:02:24.072+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-03-28T03:02:24.080+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-03-28T03:02:24.082+07:00  INFO 96408 --- [bai4_qlsp_LeBinh] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+Hibernate: 
+    select
+        p1_0.id,
+        p1_0.category_id,
+        p1_0.color,
+        p1_0.description,
+        p1_0.image,
+        p1_0.name,
+        p1_0.price,
+        p1_0.size 
+    from
+        product p1_0 
+    where
+        1=1
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0 
+    where
+        c1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0 
+    where
+        c1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0 
+    where
+        c1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0 
+    where
+        c1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0 
+    where
+        c1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0 
+    where
+        c1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0 
+    where
+        c1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0 
+    where
+        c1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0 
+    where
+        c1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0 
+    where
+        c1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0 
+    where
+        c1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0 
+    where
+        c1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0 
+    where
+        c1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0 
+    where
+        c1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0 
+    where
+        c1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0 
+    where
+        c1_0.id=?
+Hibernate: 
+    select
+        na1_0.id,
+        na1_0.content,
+        na1_0.image,
+        na1_0.title,
+        na1_0.topic 
+    from
+        news_article na1_0 
+    order by
+        na1_0.id desc
+Hibernate: 
+    select
+        na1_0.id,
+        na1_0.content,
+        na1_0.image,
+        na1_0.title,
+        na1_0.topic 
+    from
+        news_article na1_0 
+    order by
+        na1_0.id desc
+Hibernate: 
+    select
+        na1_0.id,
+        na1_0.content,
+        na1_0.image,
+        na1_0.title,
+        na1_0.topic 
+    from
+        news_article na1_0 
+    order by
+        na1_0.id desc
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        na1_0.id,
+        na1_0.content,
+        na1_0.image,
+        na1_0.title,
+        na1_0.topic 
+    from
+        news_article na1_0 
+    order by
+        na1_0.id desc
+Hibernate: 
+    select
+        na1_0.id,
+        na1_0.content,
+        na1_0.image,
+        na1_0.title,
+        na1_0.topic 
+    from
+        news_article na1_0 
+    order by
+        na1_0.id desc
+Hibernate: 
+    select
+        na1_0.id,
+        na1_0.content,
+        na1_0.image,
+        na1_0.title,
+        na1_0.topic 
+    from
+        news_article na1_0 
+    order by
+        na1_0.id desc
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0
+Hibernate: 
+    select
+        na1_0.id,
+        na1_0.content,
+        na1_0.image,
+        na1_0.title,
+        na1_0.topic 
+    from
+        news_article na1_0 
+    order by
+        na1_0.id desc
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        na1_0.id,
+        na1_0.content,
+        na1_0.image,
+        na1_0.title,
+        na1_0.topic 
+    from
+        news_article na1_0 
+    where
+        na1_0.id=?
+Hibernate: 
+    select
+        na1_0.id,
+        na1_0.content,
+        na1_0.image,
+        na1_0.title,
+        na1_0.topic 
+    from
+        news_article na1_0 
+    where
+        na1_0.id=?
+Hibernate: 
+    select
+        na1_0.id,
+        na1_0.content,
+        na1_0.image,
+        na1_0.title,
+        na1_0.topic 
+    from
+        news_article na1_0 
+    order by
+        na1_0.id desc
+Hibernate: 
+    select
+        na1_0.id,
+        na1_0.content,
+        na1_0.image,
+        na1_0.title,
+        na1_0.topic 
+    from
+        news_article na1_0 
+    order by
+        na1_0.id desc
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        na1_0.id,
+        na1_0.content,
+        na1_0.image,
+        na1_0.title,
+        na1_0.topic 
+    from
+        news_article na1_0 
+    order by
+        na1_0.id desc
+Hibernate: 
+    select
+        na1_0.id,
+        na1_0.content,
+        na1_0.image,
+        na1_0.title,
+        na1_0.topic 
+    from
+        news_article na1_0 
+    order by
+        na1_0.id desc
+Hibernate: 
+    select
+        na1_0.id,
+        na1_0.content,
+        na1_0.image,
+        na1_0.title,
+        na1_0.topic 
+    from
+        news_article na1_0 
+    where
+        na1_0.id=?
+Hibernate: 
+    select
+        na1_0.id,
+        na1_0.content,
+        na1_0.image,
+        na1_0.title,
+        na1_0.topic 
+    from
+        news_article na1_0 
+    where
+        na1_0.id=?
+Hibernate: 
+    select
+        na1_0.id,
+        na1_0.content,
+        na1_0.image,
+        na1_0.title,
+        na1_0.topic 
+    from
+        news_article na1_0 
+    order by
+        na1_0.id desc
+Hibernate: 
+    select
+        na1_0.id,
+        na1_0.content,
+        na1_0.image,
+        na1_0.title,
+        na1_0.topic 
+    from
+        news_article na1_0 
+    order by
+        na1_0.id desc
+Hibernate: 
+    select
+        na1_0.id,
+        na1_0.content,
+        na1_0.image,
+        na1_0.title,
+        na1_0.topic 
+    from
+        news_article na1_0 
+    order by
+        na1_0.id desc
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        na1_0.id,
+        na1_0.content,
+        na1_0.image,
+        na1_0.title,
+        na1_0.topic 
+    from
+        news_article na1_0 
+    order by
+        na1_0.id desc
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        na1_0.id,
+        na1_0.content,
+        na1_0.image,
+        na1_0.title,
+        na1_0.topic 
+    from
+        news_article na1_0 
+    order by
+        na1_0.id desc
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0
+Hibernate: 
+    select
+        na1_0.id,
+        na1_0.content,
+        na1_0.image,
+        na1_0.title,
+        na1_0.topic 
+    from
+        news_article na1_0 
+    order by
+        na1_0.id desc
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        c1_0.id,
+        c1_0.group_id,
+        c1_0.name,
+        c1_0.slug 
+    from
+        category c1_0
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        cg1_0.id,
+        cg1_0.banner_image,
+        cg1_0.name,
+        cg1_0.slug 
+    from
+        category_group cg1_0 
+    where
+        cg1_0.id=?
+Hibernate: 
+    select
+        a1_0.id,
+        a1_0.login_name,
+        a1_0.password 
+    from
+        account a1_0 
+    where
+        a1_0.login_name=?
+Hibernate: 
+    select
+        a1_0.id 
+    from
+        account a1_0 
+    where
+        a1_0.login_name=? 
+    limit
+        ?
+Hibernate: 
+    select
+        r1_0.id,
+        r1_0.name 
+    from
+        role r1_0 
+    where
+        r1_0.name=?
+Hibernate: 
+    insert 
+    into
+        account
+        (login_name, password) 
+    values
+        (?, ?)
+Hibernate: 
+    insert 
+    into
+        account_role
+        (account_id, role_id) 
+    values
+        (?, ?)
+Hibernate: 
+    select
+        a1_0.id 
+    from
+        account a1_0 
+    where
+        a1_0.login_name=? 
+    limit
+        ?
+Hibernate: 
+    select
+        a1_0.id,
+        a1_0.login_name,
+        a1_0.password 
+    from
+        account a1_0 
+    where
+        a1_0.login_name=?
+Hibernate: 
+    select
+        r1_0.account_id,
+        r1_1.id,
+        r1_1.name 
+    from
+        account_role r1_0 
+    join
+        role r1_1 
+            on r1_1.id=r1_0.role_id 
+    where
+        r1_0.account_id=?
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  32:48 min
+[INFO] Finished at: 2026-03-28T03:33:53+07:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:4.0.3:run (default-cli) on project demo: Process terminated with exit code: -1 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the '-e' switch
+[ERROR] Re-run Maven using the '-X' switch to enable verbose output
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
