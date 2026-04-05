@@ -1,0 +1,3 @@
+ALTER TABLE product
+    ADD COLUMN material VARCHAR(150) NULL,
+    ADD COLUMN warranty VARCHAR(100) NULL;

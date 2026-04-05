@@ -13,6 +13,7 @@ interface CreateOrderPayload {
   shippingAddress: string;
   paymentMethod: string;
   note?: string;
+  voucherCode?: string;
 }
 
 interface CreateVnpayPaymentPayload {

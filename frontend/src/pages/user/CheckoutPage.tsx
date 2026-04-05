@@ -4,8 +4,10 @@ import { getMyAddresses } from "../../api/addressApi";
 import { getApiErrorMessage } from "../../api/authApi";
 import { getMyCart, notifyCartUpdated } from "../../api/cartApi";
 import { createOrder, createVnpayPayment } from "../../api/orderApi";
-import type { CartResponse } from "../../types/cart";
+import { applyVoucher, getAvailableVouchers } from "../../api/voucherApi";
 import type { SavedAddress } from "../../types/address";
+import type { CartResponse } from "../../types/cart";
+import type { VoucherApplyResponse, VoucherSummary } from "../../types/voucher";
 
 type PaymentMethod = "COD" | "VNPAY" | "MOMO";
 
@@ -17,30 +19,43 @@ const paymentMethodOptions: Array<{
 }> = [
   {
     value: "COD",
-    label: "Thanh toan khi nhan hang",
-    description: "Xac nhan don hang ngay, thanh toan khi shipper giao den.",
+    label: "Thanh toán khi nhận hàng",
+    description: "Xác nhận đơn hàng ngay, thanh toán khi shipper giao đến.",
   },
   {
     value: "VNPAY",
     label: "VNPay",
-    description: "Thanh toan online qua cong thanh toan VNPay sandbox.",
+    description: "Thanh toán online qua cổng thanh toán VNPay sandbox.",
   },
   {
     value: "MOMO",
     label: "MoMo",
-    description: "Sap ho tro.",
+    description: "Sắp hỗ trợ.",
     disabled: true,
   },
 ];
 
 function formatPrice(price: number) {
-  return `${price.toLocaleString("vi-VN")} d`;
+  return `${price.toLocaleString("vi-VN")} đ`;
+}
+
+function getVoucherShortLabel(voucher: VoucherSummary) {
+  if (voucher.discountType === "PERCENT") {
+    const maxDiscount =
+      voucher.maxDiscount && voucher.maxDiscount > 0
+        ? `, tối đa ${formatPrice(voucher.maxDiscount)}`
+        : "";
+    return `Giảm ${voucher.discountValue}%${maxDiscount}`;
+  }
+
+  return `Giảm ${formatPrice(voucher.discountValue)}`;
 }
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const [cart, setCart] = useState<CartResponse | null>(null);
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [availableVouchers, setAvailableVouchers] = useState<VoucherSummary[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -50,6 +65,10 @@ export default function CheckoutPage() {
   const [shippingAddress, setShippingAddress] = useState("");
   const [note, setNote] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("COD");
+  const [voucherCode, setVoucherCode] = useState("");
+  const [voucherLoading, setVoucherLoading] = useState(false);
+  const [voucherMessage, setVoucherMessage] = useState("");
+  const [appliedVoucher, setAppliedVoucher] = useState<VoucherApplyResponse | null>(null);
 
   useEffect(() => {
     const fetchCart = async () => {
@@ -58,7 +77,7 @@ export default function CheckoutPage() {
         setError("");
         setCart(await getMyCart());
       } catch (err) {
-        setError(getApiErrorMessage(err, "Khong the tai gio hang de thanh toan."));
+        setError(getApiErrorMessage(err, "Không thể tải giỏ hàng để thanh toán."));
       } finally {
         setLoading(false);
       }
@@ -81,17 +100,33 @@ export default function CheckoutPage() {
           setShippingAddress(defaultAddress.addressLine);
         }
       } catch (err) {
-        setError(getApiErrorMessage(err, "Khong the tai dia chi giao hang."));
+        setError(getApiErrorMessage(err, "Không thể tải địa chỉ giao hàng."));
       }
     };
 
     void fetchAddresses();
   }, []);
 
+  useEffect(() => {
+    const fetchAvailableVouchers = async () => {
+      try {
+        setAvailableVouchers(await getAvailableVouchers());
+      } catch {
+        setAvailableVouchers([]);
+      }
+    };
+
+    void fetchAvailableVouchers();
+  }, []);
+
   const selectedAddress = useMemo(
     () => savedAddresses.find((address) => String(address.id) === selectedAddressId) ?? null,
     [savedAddresses, selectedAddressId]
   );
+
+  const subtotal = cart?.totalAmount ?? 0;
+  const discountAmount = appliedVoucher?.discountAmount ?? 0;
+  const finalTotal = appliedVoucher?.finalTotal ?? subtotal;
 
   const handleAddressChange = (addressId: string) => {
     setSelectedAddressId(addressId);
@@ -105,11 +140,57 @@ export default function CheckoutPage() {
     setShippingAddress(address.addressLine);
   };
 
+  const performApplyVoucher = async (code: string) => {
+    const normalizedCode = code.trim().toUpperCase();
+
+    if (!cart || cart.items.length === 0) {
+      return;
+    }
+
+    if (!normalizedCode) {
+      setVoucherMessage("Vui lòng nhập mã giảm giá.");
+      setAppliedVoucher(null);
+      return;
+    }
+
+    try {
+      setVoucherLoading(true);
+      setVoucherMessage("");
+      const result = await applyVoucher({
+        code: normalizedCode,
+        subtotal,
+      });
+      setAppliedVoucher(result);
+      setVoucherCode(result.code);
+      setVoucherMessage(`Áp dụng thành công mã ${result.code}.`);
+    } catch (err) {
+      setAppliedVoucher(null);
+      setVoucherMessage(getApiErrorMessage(err, "Không thể áp dụng mã giảm giá."));
+    } finally {
+      setVoucherLoading(false);
+    }
+  };
+
+  const handleApplyVoucher = async () => {
+    await performApplyVoucher(voucherCode);
+  };
+
+  const handleQuickApplyVoucher = async (code: string) => {
+    setVoucherCode(code);
+    await performApplyVoucher(code);
+  };
+
+  const handleRemoveVoucher = () => {
+    setVoucherCode("");
+    setAppliedVoucher(null);
+    setVoucherMessage("Đã xóa mã giảm giá.");
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!receiverName.trim() || !receiverPhone.trim() || !shippingAddress.trim()) {
-      setError("Vui long nhap day du thong tin nguoi nhan.");
+      setError("Vui lòng nhập đầy đủ thông tin người nhận.");
       return;
     }
 
@@ -123,6 +204,7 @@ export default function CheckoutPage() {
         shippingAddress: shippingAddress.trim(),
         paymentMethod,
         note: note.trim(),
+        voucherCode: appliedVoucher?.code,
       });
 
       notifyCartUpdated();
@@ -135,7 +217,7 @@ export default function CheckoutPage() {
 
       navigate("/account/orders", { replace: true });
     } catch (err) {
-      setError(getApiErrorMessage(err, "Khong the tao don hang."));
+      setError(getApiErrorMessage(err, "Không thể tạo đơn hàng."));
     } finally {
       setSubmitting(false);
     }
@@ -146,30 +228,32 @@ export default function CheckoutPage() {
       <div className="container py-5">
         <div className="cart-page-header">
           <div>
-            <p className="cart-page-subtitle">Buoc cuoi cung</p>
-            <h1 className="cart-page-title">Thanh toan</h1>
-            <p className="cart-page-desc">Chon dia chi nhan hang, phuong thuc thanh toan va xac nhan don hang.</p>
+            <p className="cart-page-subtitle">Bước cuối cùng</p>
+            <h1 className="cart-page-title">Thanh toán</h1>
+            <p className="cart-page-desc">
+              Chọn địa chỉ nhận hàng, phương thức thanh toán và xác nhận đơn hàng.
+            </p>
           </div>
           <Link to="/cart" className="btn btn-domora-outline">
-            Quay lai gio hang
+            Quay lại giỏ hàng
           </Link>
         </div>
 
         {loading ? (
           <div className="cart-empty-state">
-            <h3>Dang tai thong tin thanh toan...</h3>
+            <h3>Đang tải thông tin thanh toán...</h3>
           </div>
         ) : error && !cart ? (
           <div className="cart-empty-state">
-            <h3>Khong the vao trang thanh toan</h3>
+            <h3>Không thể vào trang thanh toán</h3>
             <p>{error}</p>
           </div>
         ) : !cart || cart.items.length === 0 ? (
           <div className="cart-empty-state">
-            <h3>Gio hang dang trong</h3>
-            <p>Ban can co san pham trong gio hang truoc khi dat hang.</p>
+            <h3>Giỏ hàng đang trống</h3>
+            <p>Bạn cần có sản phẩm trong giỏ hàng trước khi đặt hàng.</p>
             <Link to="/products" className="btn btn-domora">
-              Xem san pham
+              Xem sản phẩm
             </Link>
           </div>
         ) : (
@@ -177,16 +261,20 @@ export default function CheckoutPage() {
             <div className="col-lg-7">
               <form className="cart-list-card" onSubmit={handleSubmit}>
                 <div className="cart-list-head">
-                  <span>Thong tin nguoi nhan</span>
+                  <span>Thông tin người nhận</span>
                 </div>
 
                 {error && <div className="alert alert-danger mb-4">{error}</div>}
 
                 <div className="mb-4">
                   <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-                    <label className="form-label mb-0">Dia chi da luu</label>
-                    <Link to="/account/addresses" state={{ fromCheckout: true }} className="btn btn-domora-outline btn-sm">
-                      Quan ly dia chi
+                    <label className="form-label mb-0">Địa chỉ đã lưu</label>
+                    <Link
+                      to="/account/addresses"
+                      state={{ fromCheckout: true }}
+                      className="btn btn-domora-outline btn-sm"
+                    >
+                      Quản lý địa chỉ
                     </Link>
                   </div>
 
@@ -216,51 +304,132 @@ export default function CheckoutPage() {
                     </div>
                   ) : (
                     <div className="review-empty">
-                      Ban chua luu dia chi nao. Hay vao muc <strong>Dia chi cua toi</strong> de them dia chi dung nhanh
-                      khi thanh toan.
+                      Bạn chưa lưu địa chỉ nào. Hãy vào mục <strong>Địa chỉ của tôi</strong> để
+                      thêm địa chỉ dùng nhanh khi thanh toán.
                     </div>
                   )}
                 </div>
 
                 {selectedAddress && (
                   <div className="alert alert-light border mb-4">
-                    Dang dung dia chi: <strong>{selectedAddress.label || selectedAddress.fullName}</strong>
+                    Đang dùng địa chỉ: <strong>{selectedAddress.label || selectedAddress.fullName}</strong>
                   </div>
                 )}
 
                 <div className="mb-3">
-                  <label className="form-label">Ten nguoi nhan</label>
+                  <label className="form-label">Tên người nhận</label>
                   <input
                     className="form-control auth-input"
                     value={receiverName}
                     onChange={(event) => setReceiverName(event.target.value)}
-                    placeholder="Nhap ten nguoi nhan"
+                    placeholder="Nhập tên người nhận"
                   />
                 </div>
 
                 <div className="mb-3">
-                  <label className="form-label">So dien thoai</label>
+                  <label className="form-label">Số điện thoại</label>
                   <input
                     className="form-control auth-input"
                     value={receiverPhone}
                     onChange={(event) => setReceiverPhone(event.target.value)}
-                    placeholder="Nhap so dien thoai"
+                    placeholder="Nhập số điện thoại"
                   />
                 </div>
 
                 <div className="mb-4">
-                  <label className="form-label">Dia chi nhan hang</label>
+                  <label className="form-label">Địa chỉ nhận hàng</label>
                   <textarea
                     className="form-control auth-input"
                     rows={4}
                     value={shippingAddress}
                     onChange={(event) => setShippingAddress(event.target.value)}
-                    placeholder="So nha, duong, phuong/xa, quan/huyen, tinh/thanh"
+                    placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành"
                   />
                 </div>
 
                 <div className="mb-4">
-                  <label className="form-label">Phuong thuc thanh toan</label>
+                  <label className="form-label">Mã giảm giá</label>
+
+                  <div className="voucher-promo-box">
+                    <div className="voucher-promo-head">
+                      <div>
+                        <span className="voucher-promo-label">Khuyến mãi</span>
+                        <h3>Chọn nhanh mã đang khả dụng</h3>
+                      </div>
+                      <span className="voucher-promo-count">{availableVouchers.length} mã</span>
+                    </div>
+
+                    {availableVouchers.length > 0 ? (
+                      <div className="voucher-promo-list">
+                        {availableVouchers.map((voucher) => (
+                          <button
+                            key={voucher.id}
+                            type="button"
+                            className={`voucher-promo-item ${voucherCode === voucher.code ? "active" : ""}`}
+                            onClick={() => void handleQuickApplyVoucher(voucher.code)}
+                            disabled={voucherLoading}
+                          >
+                            <div>
+                              <strong>{voucher.code}</strong>
+                              <p>{voucher.name}</p>
+                              <span>{getVoucherShortLabel(voucher)}</span>
+                            </div>
+                            <small>
+                              {voucher.minOrderValue && voucher.minOrderValue > 0
+                                ? `Đơn từ ${formatPrice(voucher.minOrderValue)}`
+                                : "Không yêu cầu tối thiểu"}
+                            </small>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="voucher-promo-empty">
+                        Hiện chưa có mã khuyến mãi khả dụng.
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="voucher-apply-row">
+                    <input
+                      className="form-control auth-input"
+                      value={voucherCode}
+                      onChange={(event) => setVoucherCode(event.target.value.toUpperCase())}
+                      placeholder="Nhập mã giảm giá"
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-domora-outline"
+                      onClick={() => void handleApplyVoucher()}
+                      disabled={voucherLoading}
+                    >
+                      {voucherLoading ? "Đang áp dụng..." : "Áp dụng"}
+                    </button>
+                  </div>
+
+                  {voucherMessage && (
+                    <p className={`voucher-feedback ${appliedVoucher ? "success" : "error"}`}>
+                      {voucherMessage}
+                    </p>
+                  )}
+
+                  {appliedVoucher && (
+                    <div className="voucher-result-card">
+                      <div>
+                        <strong>{appliedVoucher.name}</strong>
+                        <p className="mb-0">
+                          Mã {appliedVoucher.code} • Giảm thực tế{" "}
+                          {formatPrice(appliedVoucher.discountAmount)}
+                        </p>
+                      </div>
+                      <button type="button" className="btn btn-sm btn-outline-danger" onClick={handleRemoveVoucher}>
+                        Bỏ mã
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mb-4">
+                  <label className="form-label">Phương thức thanh toán</label>
                   <div className="cart-payment-methods">
                     {paymentMethodOptions.map((option) => (
                       <label
@@ -285,37 +454,37 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="mb-4">
-                  <label className="form-label">Ghi chu</label>
+                  <label className="form-label">Ghi chú</label>
                   <textarea
                     className="form-control auth-input"
                     rows={3}
                     value={note}
                     onChange={(event) => setNote(event.target.value)}
-                    placeholder="Thong tin them cho don hang (khong bat buoc)"
+                    placeholder="Thông tin thêm cho đơn hàng (không bắt buộc)"
                   />
                 </div>
 
                 <button type="submit" className="btn btn-domora" disabled={submitting}>
                   {submitting
-                    ? "Dang xu ly..."
+                    ? "Đang xử lý..."
                     : paymentMethod === "VNPAY"
-                      ? "Thanh toan voi VNPay"
-                      : "Dat hang voi COD"}
+                      ? "Thanh toán với VNPay"
+                      : "Đặt hàng với COD"}
                 </button>
               </form>
             </div>
 
             <div className="col-lg-5">
               <aside className="cart-summary-card">
-                <p className="cart-summary-label">Don hang</p>
-                <h2 className="cart-summary-title">Tom tat thanh toan</h2>
+                <p className="cart-summary-label">Đơn hàng</p>
+                <h2 className="cart-summary-title">Tóm tắt thanh toán</h2>
 
                 <div className="cart-checkout-items">
                   {cart.items.map((item) => (
                     <div className="cart-summary-item" key={item.productId}>
                       <div>
                         <strong>{item.productName}</strong>
-                        <div className="text-muted small">So luong: {item.quantity}</div>
+                        <div className="text-muted small">Số lượng: {item.quantity}</div>
                       </div>
                       <strong>{formatPrice(item.subtotal)}</strong>
                     </div>
@@ -323,20 +492,24 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="cart-summary-row">
-                  <span>Phuong thuc</span>
+                  <span>Phương thức</span>
                   <strong>{paymentMethod}</strong>
                 </div>
                 <div className="cart-summary-row">
-                  <span>Tam tinh</span>
-                  <strong>{formatPrice(cart.totalAmount)}</strong>
+                  <span>Tạm tính</span>
+                  <strong>{formatPrice(subtotal)}</strong>
                 </div>
                 <div className="cart-summary-row">
-                  <span>Van chuyen</span>
-                  <strong>Lien he</strong>
+                  <span>Giảm giá</span>
+                  <strong>- {formatPrice(discountAmount)}</strong>
+                </div>
+                <div className="cart-summary-row">
+                  <span>Vận chuyển</span>
+                  <strong>Liên hệ</strong>
                 </div>
                 <div className="cart-summary-row total">
-                  <span>Tong cong</span>
-                  <strong>{formatPrice(cart.totalAmount)}</strong>
+                  <span>Tổng cộng</span>
+                  <strong>{formatPrice(finalTotal)}</strong>
                 </div>
               </aside>
             </div>

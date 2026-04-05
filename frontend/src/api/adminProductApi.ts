@@ -7,7 +7,11 @@ export interface AdminProductPayload {
   description?: string;
   price: number;
   image?: string;
+  material?: string;
   color?: string;
+  warranty?: string;
+  shortDescription?: string;
+  style?: string;
   width: number;
   length: number;
   stockQuantity: number;

@@ -2,69 +2,161 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getApiErrorMessage } from "../../api/authApi";
 import { getOrderTracking } from "../../api/deliveryApi";
-import DeliveryInfoCard from "../../components/delivery/DeliveryInfoCard";
-import PaymentInfoCard from "../../components/delivery/PaymentInfoCard";
-import ShippingCarrierCard from "../../components/delivery/ShippingCarrierCard";
-import ShippingStatusCard from "../../components/delivery/ShippingStatusCard";
-import TrackingHistoryList from "../../components/delivery/TrackingHistoryList";
-import TrackingSummaryHero from "../../components/delivery/TrackingSummaryHero";
-import TrackingTimeline from "../../components/delivery/TrackingTimeline";
+import DeliveryStatusBadge from "../../components/common/DeliveryStatusBadge";
 import { useOrderTrackingStream } from "../../hooks/useOrderTrackingStream";
 import type { DeliveryTrackingViewModel } from "../../types/delivery";
-import { getDeliveryStatusMeta } from "../../utils/deliveryTracking";
+import {
+  formatAbsoluteDateTime,
+  getDeliveryStatusMeta,
+  getPaymentMethodLabel,
+  getPaymentStatusLabel,
+  getTimelineSteps,
+} from "../../utils/deliveryTracking";
 
 function TrackingPageSkeleton() {
   return (
     <div className="tracking-shell">
       <div className="tracking-skeleton tracking-skeleton--hero" />
-      <div className="tracking-main-grid">
-        <div className="tracking-main-column">
-          <div className="tracking-skeleton tracking-skeleton--panel" />
-          <div className="tracking-skeleton tracking-skeleton--timeline" />
-        </div>
-        <div className="tracking-sidebar">
-          <div className="tracking-skeleton tracking-skeleton--panel" />
-          <div className="tracking-skeleton tracking-skeleton--panel" />
-          <div className="tracking-skeleton tracking-skeleton--panel" />
-        </div>
-      </div>
-      <div className="tracking-details-grid">
-        <div className="tracking-main-column">
-          <div className="tracking-skeleton tracking-skeleton--history" />
-        </div>
-        <div className="tracking-sidebar">
-          <div className="tracking-skeleton tracking-skeleton--panel" />
-        </div>
-      </div>
+      <div className="tracking-skeleton tracking-skeleton--timeline" />
     </div>
   );
 }
 
-function CurrentStatusPanel({ tracking }: { tracking: DeliveryTrackingViewModel }) {
+function CompactTrackingCard({ tracking }: { tracking: DeliveryTrackingViewModel }) {
   const meta = getDeliveryStatusMeta(tracking.shippingStatus);
+  const timeline = getTimelineSteps(tracking.shippingStatus, tracking.timeline).steps;
+  const [showAllHistory, setShowAllHistory] = useState(false);
+  const historyItems = showAllHistory ? tracking.history : tracking.history.slice(0, 5);
 
   return (
-    <article className={`tracking-panel ${meta.tone === "warning" ? "tracking-panel--warning" : ""}`}>
-      <div className="tracking-panel__header">
+    <article className="tracking-panel tracking-compact">
+      <div className="tracking-compact__head">
         <div>
-          <p className="tracking-panel__kicker">Tóm tắt hiện tại</p>
-          <h3>{tracking.statusLabel || meta.label}</h3>
+          <p className="tracking-panel__kicker">Theo dõi đơn hàng</p>
+          <h2>#{tracking.orderCode}</h2>
+          <p className="tracking-compact__desc">{tracking.statusDescription || meta.description}</p>
         </div>
-        <span className={`tracking-inline-status tracking-inline-status--${meta.tone}`}>{meta.label}</span>
+        <DeliveryStatusBadge status={tracking.shippingStatus} label={tracking.statusLabel || meta.label} />
       </div>
 
-      <p className="tracking-panel__lead">{tracking.statusDescription || meta.description}</p>
+      <div className="tracking-compact__meta">
+        <div>
+          <span>Mã vận đơn</span>
+          <strong>{tracking.trackingCode || "Đang cập nhật"}</strong>
+        </div>
+        <div>
+          <span>Đơn vị vận chuyển</span>
+          <strong>{tracking.shippingProvider || "Đang cập nhật"}</strong>
+        </div>
+        <div>
+          <span>Thanh toán</span>
+          <strong>{getPaymentMethodLabel(tracking.paymentMethod)}</strong>
+          <DeliveryStatusBadge
+            status={tracking.paymentStatus}
+            label={getPaymentStatusLabel(tracking.paymentStatus)}
+            size="sm"
+          />
+        </div>
+      </div>
 
-      <div className="tracking-summary-list mt-3">
+      <div className="tracking-compact__delivery">
+        <div>
+          <span>Người nhận</span>
+          <strong>{tracking.receiverName}</strong>
+          <small>{tracking.receiverPhone}</small>
+        </div>
+        <div>
+          <span>Địa chỉ giao hàng</span>
+          <strong>{tracking.shippingAddress}</strong>
+        </div>
+      </div>
+
+      <div className="tracking-compact__timeline">
+        {timeline.map((step) => (
+          <div key={step.key} className={`tracking-compact-step tracking-compact-step--${step.state}`}>
+            <div className="tracking-compact-step__marker" />
+            <div className="tracking-compact-step__content">
+              <div className="tracking-compact-step__head">
+                <strong>{step.label}</strong>
+                <span>{step.timestamp ? formatAbsoluteDateTime(step.timestamp) : "-"}</span>
+              </div>
+              <p>{step.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="tracking-compact__detail-grid">
+        <div>
+          <span>Thời gian gửi hàng</span>
+          <strong>{tracking.shippedAt ? formatAbsoluteDateTime(tracking.shippedAt) : "Đang cập nhật"}</strong>
+        </div>
+        <div>
+          <span>Thời gian giao thành công</span>
+          <strong>{tracking.deliveredAt ? formatAbsoluteDateTime(tracking.deliveredAt) : "Chưa giao"}</strong>
+        </div>
         <div>
           <span>Bước tiếp theo</span>
           <strong>{tracking.nextStep}</strong>
         </div>
-        <div>
-          <span>Tra cứu vận đơn</span>
-          <strong>{tracking.trackingCode || "Chưa có mã vận đơn"}</strong>
-        </div>
       </div>
+
+      {(tracking.shippingNote || tracking.failReason) && (
+        <div className="tracking-compact__notes">
+          {tracking.shippingNote && (
+            <div>
+              <span>Ghi chú giao hàng</span>
+              <p>{tracking.shippingNote}</p>
+            </div>
+          )}
+          {tracking.failReason && (
+            <div>
+              <span>Lý do thất bại</span>
+              <p>{tracking.failReason}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="tracking-compact__history">
+        <div className="tracking-compact__history-head">
+          <h3>Lịch sử cập nhật</h3>
+          {tracking.history.length > 5 && (
+            <button type="button" className="btn btn-domora-outline btn-sm" onClick={() => setShowAllHistory((v) => !v)}>
+              {showAllHistory ? "Thu gọn" : "Xem đầy đủ"}
+            </button>
+          )}
+        </div>
+
+        {historyItems.map((item, index) => (
+          <div key={`${item.status}-${item.changedAt}-${index}`} className="tracking-compact-history-item">
+            <div className="tracking-compact-history-item__top">
+              <strong>{item.statusLabel}</strong>
+              <span>{formatAbsoluteDateTime(item.changedAt)}</span>
+            </div>
+            <p>{item.description}</p>
+            <div className="tracking-compact-history-item__meta">
+              <small>
+                Cập nhật bởi: {item.changedBy || "Hệ thống"} {item.changedByRole ? `(${item.changedByRole})` : ""}
+              </small>
+              {item.note ? <small>Ghi chú: {item.note}</small> : null}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {tracking.trackingUrl ? (
+        <div className="tracking-compact__actions">
+          <a
+            href={tracking.trackingUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="btn btn-domora-outline btn-sm"
+          >
+            Tra cứu với đơn vị vận chuyển
+          </a>
+        </div>
+      ) : null}
     </article>
   );
 }
@@ -113,7 +205,7 @@ export default function OrderTrackingPage() {
     };
   }, [numericOrderId, reloadNonce]);
 
-  const { lastEvent, streamError, streamStatus } = useOrderTrackingStream(numericOrderId, {
+  const { streamError, streamStatus } = useOrderTrackingStream(numericOrderId, {
     enabled: !loading && !error && !!tracking,
     onSnapshot: setTracking,
   });
@@ -121,19 +213,17 @@ export default function OrderTrackingPage() {
   const streamLabel = useMemo(() => {
     switch (streamStatus) {
       case "connecting":
-        return "Đang kết nối luồng cập nhật theo dõi...";
+        return "Đang kết nối cập nhật.";
       case "live":
-        return lastEvent?.emittedAt
-          ? "Trạng thái vận chuyển đang được cập nhật gần thời gian thực."
-          : "Đã kết nối luồng cập nhật theo dõi.";
+        return "Đang cập nhật thời gian thực.";
       case "reconnecting":
-        return "Kết nối SSE đang gián đoạn, hệ thống đang tự kết nối lại.";
+        return "Đang kết nối lại.";
       case "fallback":
-        return "Tạm thời đang tải lại dữ liệu khi luồng SSE không ổn định.";
+        return "Đang tải lại dữ liệu.";
       default:
         return "";
     }
-  }, [lastEvent?.emittedAt, streamStatus]);
+  }, [streamStatus]);
 
   if (loading) {
     return (
@@ -171,56 +261,14 @@ export default function OrderTrackingPage() {
     <section className="tracking-page">
       <div className="container py-5">
         <div className="tracking-shell">
-          <TrackingSummaryHero tracking={tracking} />
-
           {streamLabel ? (
             <div className={`tracking-stream-banner tracking-stream-banner--${streamError ? "warning" : "live"}`}>
-              <strong>{streamStatus === "live" ? "Cập nhật trực tiếp" : "Kết nối theo dõi"}</strong>
+              <strong>Theo dõi đơn hàng</strong>
               <span>{streamLabel}</span>
             </div>
           ) : null}
 
-          <div className="tracking-main-grid">
-            <div className="tracking-main-column">
-              <CurrentStatusPanel tracking={tracking} />
-              <TrackingTimeline currentStatus={tracking.shippingStatus} items={tracking.timeline} />
-            </div>
-
-            <aside className="tracking-sidebar tracking-sidebar--primary">
-              <ShippingCarrierCard
-                shippingProvider={tracking.shippingProvider}
-                trackingCode={tracking.trackingCode}
-                trackingUrl={tracking.trackingUrl}
-              />
-              <ShippingStatusCard
-                shippingStatus={tracking.shippingStatus}
-                statusLabel={tracking.statusLabel}
-                shippingNote={tracking.shippingNote}
-                failReason={tracking.failReason}
-                shippedAt={tracking.shippedAt}
-                deliveredAt={tracking.deliveredAt}
-              />
-              <PaymentInfoCard
-                paymentMethod={tracking.paymentMethod}
-                paymentStatus={tracking.paymentStatus}
-                deliveredAt={tracking.deliveredAt}
-              />
-            </aside>
-          </div>
-
-          <div className="tracking-details-grid">
-            <div className="tracking-main-column tracking-main-column--history">
-              <TrackingHistoryList items={tracking.history} />
-            </div>
-
-            <aside className="tracking-sidebar tracking-sidebar--details">
-              <DeliveryInfoCard
-                receiverName={tracking.receiverName}
-                receiverPhone={tracking.receiverPhone}
-                shippingAddress={tracking.shippingAddress}
-              />
-            </aside>
-          </div>
+          <CompactTrackingCard tracking={tracking} />
         </div>
       </div>
     </section>

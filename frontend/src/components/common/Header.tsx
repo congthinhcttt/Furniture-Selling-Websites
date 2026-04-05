@@ -8,6 +8,8 @@ interface HeaderProps {
   categoryGroups?: CategoryGroup[];
   categories?: Category[];
   cartCount?: number;
+  wishlistCount?: number;
+  compareCount?: number;
 }
 
 const MENU_CLOSE_DELAY = 260;
@@ -16,6 +18,8 @@ export default function Header({
   categoryGroups = [],
   categories = [],
   cartCount = 0,
+  wishlistCount = 0,
+  compareCount = 0,
 }: HeaderProps) {
   const navigate = useNavigate();
   const { auth, logout } = useAuth();
@@ -205,6 +209,12 @@ export default function Header({
               </li>
 
               <li className="nav-item">
+                <Link className="nav-link nav-item-link" to="/promotions">
+                  Khuyến mãi
+                </Link>
+              </li>
+
+              <li className="nav-item">
                 <Link className="nav-link nav-item-link" to="/about">
                   Về DOMORA
                 </Link>
@@ -236,6 +246,20 @@ export default function Header({
                   </button>
                 </form>
               </div>
+
+              <Link to="/compare" className="icon-btn position-relative" aria-label="So sánh sản phẩm">
+                <i className="bi bi-sliders2"></i>
+                {compareCount > 0 && <span className="cart-badge">{compareCount}</span>}
+              </Link>
+
+              <Link
+                to={auth?.token ? "/account/wishlist" : "/login"}
+                className="icon-btn position-relative wishlist-nav-link"
+                aria-label="Sản phẩm yêu thích"
+              >
+                <i className="bi bi-heart"></i>
+                {wishlistCount > 0 && <span className="cart-badge">{wishlistCount}</span>}
+              </Link>
 
               <Link to="/cart" className="icon-btn position-relative" aria-label="Giỏ hàng">
                 <i className="bi bi-bag"></i>
@@ -291,6 +315,11 @@ export default function Header({
                       <li>
                         <Link className="dropdown-item" to="/account/reviews">
                           Đánh giá của tôi
+                        </Link>
+                      </li>
+                      <li>
+                        <Link className="dropdown-item" to="/account/wishlist">
+                          Sản phẩm yêu thích
                         </Link>
                       </li>
 

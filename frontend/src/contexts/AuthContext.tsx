@@ -47,6 +47,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
           avatarUrl: profile.avatarUrl,
           accountId: profile.id,
           role: profile.role || storedAuth.role,
+          authProvider: profile.authProvider || storedAuth.authProvider,
         };
         setAuth(nextAuth);
         saveAuth(nextAuth, localStorage.getItem("auth") !== null);
@@ -84,6 +85,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         avatarUrl: profile.avatarUrl,
         accountId: profile.id,
         role: profile.role || "USER",
+        authProvider: profile.authProvider || "LOCAL",
         token,
         tokenType: "Bearer",
       };

@@ -14,9 +14,13 @@ public class ProductResponse {
     private Long id;
     private String name;
     private String description;
+    private String shortDescription;
     private Long price;
     private String image;
+    private String material;
     private String color;
+    private String warranty;
+    private String style;
     private Integer width;
     private Integer length;
     private Integer stockQuantity;

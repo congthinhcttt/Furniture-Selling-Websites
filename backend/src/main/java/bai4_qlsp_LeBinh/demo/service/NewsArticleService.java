@@ -56,24 +56,42 @@ public class NewsArticleService {
         }
 
         newsArticleRepository.save(buildSeed(
-                "Xu hướng",
-                "Xu hướng nội thất 2026 cho căn hộ hiện đại",
+                "Bảng màu hiện đại",
+                "Những gam màu giúp căn hộ hiện đại trông ấm và dễ ở hơn",
                 "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&q=80&w=1200",
-                "Năm 2026 tiếp tục ưu tiên không gian sống gọn, ấm và dễ ứng dụng. Các thiết kế nổi bật tập trung vào bảng màu trung tính, chất liệu gỗ sáng và những món nội thất có tỷ lệ vừa phải cho căn hộ thành thị. Đây là hướng đi phù hợp với nhu cầu sống linh hoạt, thẩm mỹ nhưng vẫn chú trọng công năng hằng ngày."
+                """
+                Một căn hộ hiện đại sẽ dễ sống hơn khi bảng màu được tiết chế và có độ ấm vừa đủ. Những gam be cát, trắng kem, nâu gỗ nhạt hay xanh xám dịu giúp không gian giữ được vẻ tinh gọn mà không tạo cảm giác lạnh.
+
+                Khi chọn màu nền, nên ưu tiên một tông chủ đạo chiếm phần lớn diện tích rồi bổ sung thêm hai đến ba sắc độ gần nhau cho nội thất. Cách làm này giúp tổng thể liền mạch, dễ phối đồ và giữ được nhịp thị giác nhẹ nhàng.
+
+                Điểm quan trọng là chất liệu phải đi cùng màu sắc. Một mảng tường sáng kết hợp gỗ sồi, vải dệt thô và ánh sáng vàng ấm sẽ tạo cảm giác đủ đầy hơn rất nhiều so với việc chỉ thay đổi màu sơn.
+                """
         ));
 
         newsArticleRepository.save(buildSeed(
-                "Mẹo bài trí",
-                "Cách phối sofa, bàn trà và thảm để phòng khách hài hòa",
+                "Phòng khách hài hòa",
+                "Phối sofa, bàn trà và thảm để phòng khách hài hòa hơn",
                 "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&q=80&w=1200",
-                "Một phòng khách cân đối nên bắt đầu từ tỷ lệ giữa sofa, bàn trà và thảm. Sofa nên là điểm tựa chính, bàn trà nhỏ hơn vừa đủ để tạo khoảng thở, còn thảm nên ôm trọn khu vực tiếp khách để liên kết tổng thể. Chọn cùng tông màu hoặc các sắc độ gần nhau sẽ giúp không gian gọn và cao cấp hơn."
+                """
+                Một phòng khách đẹp hiếm khi đến từ việc chọn từng món thật nổi bật. Cảm giác hài hòa thường bắt đầu ở tỷ lệ giữa sofa, bàn trà và thảm, nơi mọi chi tiết nâng đỡ lẫn nhau thay vì cạnh tranh.
+
+                Sofa nên là khối chính tạo nhịp cho căn phòng. Bàn trà vì thế cần gọn hơn một nhịp, đủ dùng nhưng không cản luồng di chuyển. Thảm nên lớn vừa đủ để ôm lấy khu vực tiếp khách, giúp bố cục trông có chủ đích và ấm hơn.
+
+                Nếu chưa chắc nên phối ra sao, hãy bắt đầu từ một bảng màu trung tính rồi thêm điểm nhấn bằng chất liệu như gỗ, đá hoặc vải dệt. Chính sự tiết chế này làm cho phòng khách trông sang hơn và sống lâu với thời gian.
+                """
         ));
 
         newsArticleRepository.save(buildSeed(
-                "Không gian sống",
-                "Bí quyết chọn giường ngủ và tủ quần áo cho phòng nhỏ",
-                "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&q=80&w=1200",
-                "Với phòng ngủ diện tích nhỏ, ưu tiên những mẫu giường có thiết kế thanh thoát, màu sáng và chiều cao hợp lý để không tạo cảm giác nặng nề. Tủ quần áo nên chọn dạng cánh lùa hoặc chiều sâu gọn để tiết kiệm diện tích sử dụng. Sự đồng bộ về vật liệu và màu sắc giữa giường, tab đầu giường và tủ sẽ giúp căn phòng trông rộng và dễ chịu hơn."
+                "Phòng ngủ gọn đẹp",
+                "Cách chọn giường ngủ và tủ áo cho phòng nhỏ mà vẫn thoáng",
+                "https://images.unsplash.com/photo-1505693535144-3f0b7550e0f2?auto=format&fit=crop&q=80&w=1200",
+                """
+                Với phòng ngủ nhỏ, điều cần tránh nhất là những món nội thất quá nặng thị giác. Một chiếc giường thấp, đường nét gọn và bề mặt sáng màu sẽ giúp căn phòng trông nhẹ hơn ngay cả khi diện tích không đổi.
+
+                Tủ áo nên ưu tiên kích thước vừa nhu cầu sử dụng thay vì cố tăng sức chứa bằng mọi giá. Cánh lùa, tay nắm ẩn hoặc bề mặt phẳng sẽ khiến khối tủ bớt áp lực hơn, đồng thời giữ được vẻ hiện đại cho toàn bộ không gian.
+
+                Khi giường, tab đầu giường và tủ áo cùng đi theo một ngôn ngữ vật liệu, căn phòng sẽ trông ngăn nắp và có chiều sâu hơn. Đây là kiểu đồng bộ tinh tế, rất phù hợp với những không gian sống cần sự thư thái mỗi ngày.
+                """
         ));
     }
 
@@ -92,7 +110,7 @@ public class NewsArticleService {
 
     private NewsArticle getNewsEntityById(Long id) {
         return newsArticleRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tin tức với id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bài viết với id: " + id));
     }
 
     private NewsArticleResponse mapToResponse(NewsArticle article) {

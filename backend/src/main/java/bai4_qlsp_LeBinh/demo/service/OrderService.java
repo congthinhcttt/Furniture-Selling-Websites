@@ -3,6 +3,7 @@ package bai4_qlsp_LeBinh.demo.service;
 import bai4_qlsp_LeBinh.demo.dto.request.CreateOrderRequest;
 import bai4_qlsp_LeBinh.demo.dto.response.OrderItemResponse;
 import bai4_qlsp_LeBinh.demo.dto.response.OrderResponse;
+import bai4_qlsp_LeBinh.demo.dto.response.VoucherApplyResponse;
 import bai4_qlsp_LeBinh.demo.entity.Account;
 import bai4_qlsp_LeBinh.demo.entity.Cart;
 import bai4_qlsp_LeBinh.demo.entity.CartItem;
@@ -33,6 +34,7 @@ public class OrderService {
     private final OrderItemRepository orderItemRepository;
     private final ProductService productService;
     private final DeliveryTrackingService deliveryTrackingService;
+    private final VoucherService voucherService;
 
     public OrderService(AccountRepository accountRepository,
                         CartRepository cartRepository,
@@ -40,7 +42,8 @@ public class OrderService {
                         OrderRepository orderRepository,
                         OrderItemRepository orderItemRepository,
                         ProductService productService,
-                        DeliveryTrackingService deliveryTrackingService) {
+                        DeliveryTrackingService deliveryTrackingService,
+                        VoucherService voucherService) {
         this.accountRepository = accountRepository;
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
@@ -48,6 +51,7 @@ public class OrderService {
         this.orderItemRepository = orderItemRepository;
         this.productService = productService;
         this.deliveryTrackingService = deliveryTrackingService;
+        this.voucherService = voucherService;
     }
 
     @Transactional
@@ -64,10 +68,17 @@ public class OrderService {
         }
 
         String paymentMethod = normalizePaymentMethod(request.getPaymentMethod());
-
-        long totalAmount = cartItems.stream()
+        long subtotalAmount = cartItems.stream()
                 .mapToLong(item -> item.getProduct().getPrice() * item.getQuantity())
                 .sum();
+
+        VoucherApplyResponse appliedVoucher = null;
+        if (request.getVoucherCode() != null && !request.getVoucherCode().isBlank()) {
+            appliedVoucher = voucherService.applyVoucher(request.getVoucherCode(), subtotalAmount);
+        }
+
+        long discountAmount = appliedVoucher != null ? appliedVoucher.getDiscountAmount() : 0L;
+        long finalTotal = appliedVoucher != null ? appliedVoucher.getFinalTotal() : subtotalAmount;
 
         Order order = new Order();
         order.setOrderCode(generateOrderCode());
@@ -78,7 +89,11 @@ public class OrderService {
         order.setPaymentMethod(paymentMethod);
         order.setPaymentStatus("UNPAID");
         order.setNote(request.getNote());
-        order.setTotalAmount(totalAmount);
+        order.setVoucherCode(appliedVoucher != null ? appliedVoucher.getCode() : null);
+        order.setSubtotalAmount(subtotalAmount);
+        order.setDiscountAmount(discountAmount);
+        order.setFinalTotal(finalTotal);
+        order.setTotalAmount(finalTotal);
         order.setStatus("PENDING");
         order.setCreatedAt(LocalDateTime.now());
         order.setUpdatedAt(LocalDateTime.now());
@@ -96,6 +111,10 @@ public class OrderService {
             orderItem.setUnitPrice(product.getPrice());
             orderItem.setSubtotal(product.getPrice() * cartItem.getQuantity());
             orderItemRepository.save(orderItem);
+        }
+
+        if (appliedVoucher != null) {
+            voucherService.markVoucherUsed(appliedVoucher.getVoucherId());
         }
 
         cartItemRepository.deleteByCartId(cart.getId());
@@ -196,6 +215,10 @@ public class OrderService {
                 .paymentMethod(order.getPaymentMethod())
                 .paymentStatus(order.getPaymentStatus())
                 .note(order.getNote())
+                .voucherCode(order.getVoucherCode())
+                .subtotalAmount(order.getSubtotalAmount())
+                .discountAmount(order.getDiscountAmount())
+                .finalTotal(order.getFinalTotal())
                 .totalAmount(order.getTotalAmount())
                 .status(order.getStatus())
                 .vnpTxnRef(order.getVnpTxnRef())

@@ -1,102 +1,56 @@
-import { useEffect, useMemo, useState } from "react";
-import { FaArrowUp, FaComments, FaPaperPlane, FaXmark } from "react-icons/fa6";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { FaArrowUp, FaComments, FaPaperPlane, FaSpinner, FaXmark } from "react-icons/fa6";
 import { SiZalo } from "react-icons/si";
+import { askChatbot, getChatbotQuickQuestions } from "../../api/chatbotApi";
+import { getApiErrorMessage } from "../../api/authApi";
+import type { ChatbotProductItem, ChatbotResponseData } from "../../types/chatbot";
+import { buildImageUrl } from "../../utils/image";
 
 type ChatMessage = {
   id: number;
   role: "bot" | "user";
   content: string;
+  type?: ChatbotResponseData["type"];
+  products?: ChatbotProductItem[];
+  suggestions?: string[];
 };
 
 const ZALO_PHONE = "0123456789";
-const QUICK_QUESTIONS = [
-  "Cửa hàng ở đâu?",
-  "Có giao hàng không?",
-  "Thanh toán thế nào?",
-  "Bảo hành bao lâu?",
+const FALLBACK_QUESTIONS = [
+  "Sofa nào phù hợp phòng khách nhỏ?",
+  "Có bàn ăn dưới 5 triệu không?",
+  "Tôi muốn nội thất màu kem",
+  "Chính sách giao hàng thế nào?",
 ];
 
 const BOT_WELCOME =
-  "Xin chào, tôi có thể hỗ trợ các câu hỏi đơn giản về địa chỉ, giao hàng, thanh toán, bảo hành và liên hệ.";
+  "Xin chào, tôi là trợ lý tư vấn của DOMORA. Bạn có thể hỏi về sản phẩm nội thất, giao hàng, thanh toán, bảo hành hoặc liên hệ hỗ trợ.";
 
-function normalizeText(value: string) {
-  return value
-    .toLocaleLowerCase("vi-VN")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim();
+function formatPrice(price: number) {
+  return `${price.toLocaleString("vi-VN")} đ`;
 }
 
-function getBotReply(input: string) {
-  const normalized = normalizeText(input);
-
-  if (!normalized) {
-    return "Bạn hãy nhập câu hỏi ngắn như: cửa hàng ở đâu, có giao hàng không, thanh toán thế nào.";
-  }
-
-  if (
-    normalized.includes("xin chao") ||
-    normalized.includes("hello") ||
-    normalized.includes("hi") ||
-    normalized.includes("chao")
-  ) {
-    return "Xin chào, bạn có thể hỏi về địa chỉ showroom, giao hàng, thanh toán, bảo hành hoặc liên hệ Zalo.";
-  }
-
-  if (
-    normalized.includes("o dau") ||
-    normalized.includes("dia chi") ||
-    normalized.includes("cua hang") ||
-    normalized.includes("showroom")
-  ) {
-    return "Showroom DOMORA hiện ở 123 Nguyễn Văn Cừ, TP. Hồ Chí Minh. Thời gian mở cửa: 08:00 - 21:00 mỗi ngày.";
-  }
-
-  if (
-    normalized.includes("giao hang") ||
-    normalized.includes("van chuyen") ||
-    normalized.includes("ship") ||
-    normalized.includes("delivery")
-  ) {
-    return "DOMORA có hỗ trợ giao hàng. Sau khi đặt hàng, nhân viên sẽ xác nhận đơn và thời gian giao phù hợp với khu vực của bạn.";
-  }
-
-  if (
-    normalized.includes("thanh toan") ||
-    normalized.includes("tra tien") ||
-    normalized.includes("payment") ||
-    normalized.includes("chuyen khoan")
-  ) {
-    return "Bạn có thể thanh toán khi đặt hàng theo hướng dẫn ở trang thanh toán. Nếu cần hỗ trợ nhanh, hãy liên hệ Zalo bên dưới.";
-  }
-
-  if (
-    normalized.includes("bao hanh") ||
-    normalized.includes("bao tri") ||
-    normalized.includes("warranty")
-  ) {
-    return "Sản phẩm của DOMORA có chính sách bảo hành theo từng dòng sản phẩm. Bạn có thể để lại mã đơn hàng qua Zalo để được tư vấn chi tiết hơn.";
-  }
-
-  if (
-    normalized.includes("lien he") ||
-    normalized.includes("so dien thoai") ||
-    normalized.includes("zalo") ||
-    normalized.includes("hotline")
-  ) {
-    return `Bạn có thể liên hệ nhanh qua Zalo ${ZALO_PHONE} hoặc gọi số 0123 456 789 trong giờ làm việc 08:00 - 21:00.`;
-  }
-
-  return "Tôi mới hỗ trợ các câu hỏi đơn giản về địa chỉ, giao hàng, thanh toán, bảo hành và liên hệ. Bạn có thể thử hỏi ngắn gọn hơn.";
+function createBotMessage(data: ChatbotResponseData): ChatMessage {
+  return {
+    id: Date.now() + Math.floor(Math.random() * 1000),
+    role: "bot",
+    content: data.reply,
+    type: data.type,
+    products: data.products || [],
+    suggestions: data.suggestions || [],
+  };
 }
 
 export default function FloatingSupport() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [question, setQuestion] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [quickQuestions, setQuickQuestions] = useState<string[]>(FALLBACK_QUESTIONS);
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: 1, role: "bot", content: BOT_WELCOME },
+    { id: 1, role: "bot", content: BOT_WELCOME, suggestions: FALLBACK_QUESTIONS },
   ]);
+  const bodyRef = useRef<HTMLDivElement | null>(null);
 
   const zaloLink = useMemo(() => `https://zalo.me/${ZALO_PHONE}`, []);
 
@@ -113,10 +67,35 @@ export default function FloatingSupport() {
     };
   }, []);
 
-  const handleSendMessage = (input: string) => {
-    const trimmed = input.trim();
+  useEffect(() => {
+    const fetchQuickQuestions = async () => {
+      try {
+        const items = await getChatbotQuickQuestions();
+        if (items.length > 0) {
+          setQuickQuestions(items);
+          setMessages((current) =>
+            current.map((message, index) =>
+              index === 0 ? { ...message, suggestions: items } : message
+            )
+          );
+        }
+      } catch {
+        setQuickQuestions(FALLBACK_QUESTIONS);
+      }
+    };
 
-    if (!trimmed) {
+    void fetchQuickQuestions();
+  }, []);
+
+  useEffect(() => {
+    if (bodyRef.current) {
+      bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
+    }
+  }, [messages, loading]);
+
+  const handleAsk = async (input: string) => {
+    const trimmed = input.trim();
+    if (!trimmed || loading) {
       return;
     }
 
@@ -126,19 +105,36 @@ export default function FloatingSupport() {
       content: trimmed,
     };
 
-    const botMessage: ChatMessage = {
-      id: Date.now() + 1,
-      role: "bot",
-      content: getBotReply(trimmed),
-    };
-
-    setMessages((current) => [...current, userMessage, botMessage]);
+    setMessages((current) => [...current, userMessage]);
     setQuestion("");
+    setLoading(true);
+
+    try {
+      const response = await askChatbot({ message: trimmed });
+      setMessages((current) => [...current, createBotMessage(response)]);
+    } catch (error) {
+      setMessages((current) => [
+        ...current,
+        {
+          id: Date.now() + 2,
+          role: "bot",
+          type: "ERROR",
+          content:
+            getApiErrorMessage(
+              error,
+              "Tôi đang gặp chút trục trặc khi phản hồi. Bạn có thể thử lại sau hoặc mô tả ngắn gọn hơn."
+            ) || "Tôi đang gặp chút trục trặc khi phản hồi.",
+          suggestions: FALLBACK_QUESTIONS,
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    handleSendMessage(question);
+    void handleAsk(question);
   };
 
   const handleScrollTop = () => {
@@ -185,7 +181,7 @@ export default function FloatingSupport() {
           <div className="support-chatbot__header">
             <div>
               <strong>DOMORA Assistant</strong>
-              <p className="mb-0">Hỗ trợ câu hỏi đơn giản</p>
+              <p className="mb-0">Tư vấn nội thất và hỗ trợ nhanh</p>
             </div>
             <button
               type="button"
@@ -197,24 +193,77 @@ export default function FloatingSupport() {
             </button>
           </div>
 
-          <div className="support-chatbot__body">
+          <div className="support-chatbot__body" ref={bodyRef}>
             {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`support-chatbot__message support-chatbot__message--${message.role}`}
-              >
-                {message.content}
+              <div key={message.id} className="support-chatbot__message-wrap">
+                <div
+                  className={`support-chatbot__message support-chatbot__message--${message.role} ${
+                    message.type ? `support-chatbot__message--${message.type.toLowerCase()}` : ""
+                  }`}
+                >
+                  {message.content}
+                </div>
+
+                {message.products && message.products.length > 0 && (
+                  <div className="support-chatbot__products">
+                    {message.products.map((product) => (
+                      <a
+                        key={product.id}
+                        href={product.detailUrl}
+                        className="support-chatbot__product-card"
+                      >
+                        <img
+                          src={buildImageUrl(
+                            product.image,
+                            "https://via.placeholder.com/160x120?text=DOMORA"
+                          )}
+                          alt={product.name}
+                        />
+                        <div>
+                          <strong>{product.name}</strong>
+                          <span>{formatPrice(product.price)}</span>
+                          <p>{product.shortDescription || "Thiết kế phù hợp không gian hiện đại."}</p>
+                          <em>Xem chi tiết</em>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                )}
+
+                {message.suggestions && message.suggestions.length > 0 && (
+                  <div className="support-chatbot__suggestions">
+                    {message.suggestions.map((item) => (
+                      <button
+                        key={`${message.id}-${item}`}
+                        type="button"
+                        className="support-chatbot__suggestion-item"
+                        onClick={() => void handleAsk(item)}
+                        disabled={loading}
+                      >
+                        {item}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
+
+            {loading && (
+              <div className="support-chatbot__loading">
+                <FaSpinner className="support-chatbot__loading-icon" />
+                <span>DOMORA đang tìm câu trả lời phù hợp...</span>
+              </div>
+            )}
           </div>
 
           <div className="support-chatbot__quick">
-            {QUICK_QUESTIONS.map((item) => (
+            {quickQuestions.map((item) => (
               <button
                 key={item}
                 type="button"
                 className="support-chatbot__quick-item"
-                onClick={() => handleSendMessage(item)}
+                onClick={() => void handleAsk(item)}
+                disabled={loading}
               >
                 {item}
               </button>
@@ -226,11 +275,17 @@ export default function FloatingSupport() {
               type="text"
               value={question}
               className="support-chatbot__input"
-              placeholder="Nhập câu hỏi của bạn..."
+              placeholder="Nhập câu hỏi về nội thất của bạn..."
               onChange={(event) => setQuestion(event.target.value)}
+              disabled={loading}
             />
-            <button type="submit" className="support-chatbot__submit" aria-label="Gửi câu hỏi">
-              <FaPaperPlane />
+            <button
+              type="submit"
+              className="support-chatbot__submit"
+              aria-label="Gửi câu hỏi"
+              disabled={loading}
+            >
+              {loading ? <FaSpinner className="support-chatbot__submit-loading" /> : <FaPaperPlane />}
             </button>
           </form>
         </div>

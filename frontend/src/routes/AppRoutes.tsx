@@ -14,19 +14,24 @@ import AccountAddressesPage from "../pages/user/AccountAddressesPage";
 import AccountOrdersPage from "../pages/user/AccountOrdersPage";
 import AccountProfilePage from "../pages/user/AccountProfilePage";
 import AccountReviewsPage from "../pages/user/AccountReviewsPage";
+import AccountWishlistPage from "../pages/user/AccountWishlistPage";
 import CartPage from "../pages/user/CartPage";
 import CheckoutPage from "../pages/user/CheckoutPage";
+import ComparePage from "../pages/user/ComparePage";
 import HomePage from "../pages/user/HomePage";
-import LoginPage from "../pages/user/LoginPage";
 import NewsDetailPage from "../pages/user/NewsDetailPage";
 import NewsPage from "../pages/user/NewsPage";
-import OAuth2SuccessPage from "../pages/user/OAuth2SuccessPage";
 import OrderTrackingPage from "../pages/user/OrderTrackingPage";
 import PaymentResultPage from "../pages/user/PaymentResultPage";
 import ProductDetailPage from "../pages/user/ProductDetailPage";
 import ProductPage from "../pages/user/ProductPage";
-import RegisterPage from "../pages/user/RegisterPage";
+import PromotionPage from "../pages/user/PromotionPage";
 import StorePage from "../pages/user/StorePage";
+import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
+import LoginPage from "../pages/auth/LoginPage";
+import OAuth2SuccessPage from "../pages/auth/OAuth2SuccessPage";
+import RegisterPage from "../pages/auth/RegisterPage";
+import ResetPasswordPage from "../pages/auth/ResetPasswordPage";
 
 export default function AppRoutes() {
   return (
@@ -36,6 +41,8 @@ export default function AppRoutes() {
           <Route path="/" element={<HomePage />} />
           <Route path="/products" element={<ProductPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
+          <Route path="/compare" element={<ComparePage />} />
+          <Route path="/promotions" element={<PromotionPage />} />
           <Route path="/news" element={<NewsPage />} />
           <Route path="/news/:id" element={<NewsDetailPage />} />
           <Route path="/about" element={<AboutPage />} />
@@ -44,6 +51,8 @@ export default function AppRoutes() {
         </Route>
 
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/oauth2/success" element={<OAuth2SuccessPage />} />
         <Route path="/payment/vnpay/result" element={<PaymentResultPage />} />
@@ -57,6 +66,7 @@ export default function AppRoutes() {
             <Route path="/account/orders" element={<AccountOrdersPage />} />
             <Route path="/orders/:orderId/tracking" element={<OrderTrackingPage />} />
             <Route path="/account/reviews" element={<AccountReviewsPage />} />
+            <Route path="/account/wishlist" element={<AccountWishlistPage />} />
           </Route>
         </Route>
 

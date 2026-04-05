@@ -35,7 +35,7 @@ export default function AccountAddressesPage() {
       setError("");
       setAddresses(await getMyAddresses());
     } catch (err) {
-      setError(getApiErrorMessage(err, "Khong the tai danh sach dia chi."));
+      setError(getApiErrorMessage(err, "Không thể tải danh sách địa chỉ."));
     } finally {
       setLoading(false);
     }
@@ -56,7 +56,7 @@ export default function AccountAddressesPage() {
     setError("");
 
     if (!form.fullName?.trim() || !form.phone?.trim() || !form.addressLine?.trim()) {
-      setError("Vui long nhap day du ho ten, so dien thoai va dia chi.");
+      setError("Vui lòng nhập đầy đủ họ tên, số điện thoại và địa chỉ.");
       return;
     }
 
@@ -71,7 +71,7 @@ export default function AccountAddressesPage() {
       await loadAddresses();
       resetForm();
     } catch (err) {
-      setError(getApiErrorMessage(err, "Khong the luu dia chi."));
+      setError(getApiErrorMessage(err, "Không thể lưu địa chỉ."));
     } finally {
       setSubmitting(false);
     }
@@ -96,21 +96,21 @@ export default function AccountAddressesPage() {
           <div className="info-card info-card-large">
             <div className="account-section-heading">
               <div>
-                <p className="account-section-kicker">Address Book</p>
-                <h2>Dia chi cua toi</h2>
+                <p className="account-section-kicker">Sổ địa chỉ</p>
+                <h2>Địa chỉ của tôi</h2>
               </div>
-              <span className="account-section-chip">{addresses.length} dia chi</span>
+              <span className="account-section-chip">{addresses.length} địa chỉ</span>
             </div>
 
             <p className="account-note">
-              Dia chi duoc luu rieng theo tung tai khoan va se duoc dung khi thanh toan.
+              Địa chỉ được lưu riêng theo từng tài khoản và sẽ được dùng khi thanh toán.
             </p>
 
             {fromCheckout && (
               <div className="alert alert-light border d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-                <span>Ban dang quan ly dia chi tu trang thanh toan.</span>
+                <span>Bạn đang quản lý địa chỉ từ trang thanh toán.</span>
                 <button type="button" className="btn btn-domora-outline btn-sm" onClick={() => navigate("/checkout")}>
-                  Tiep tuc thanh toan
+                  Tiếp tục thanh toán
                 </button>
               </div>
             )}
@@ -118,8 +118,8 @@ export default function AccountAddressesPage() {
             <form className="review-form mb-4" onSubmit={handleSubmit}>
               <div className="review-form__heading">
                 <div>
-                  <p className="review-form__kicker">{editingId ? "Chinh sua dia chi" : "Them dia chi moi"}</p>
-                  <h3>{editingId ? "Cap nhat thong tin nhan hang" : "Luu dia chi de dung nhanh khi thanh toan"}</h3>
+                  <p className="review-form__kicker">{editingId ? "Chỉnh sửa địa chỉ" : "Thêm địa chỉ mới"}</p>
+                  <h3>{editingId ? "Cập nhật thông tin nhận hàng" : "Lưu địa chỉ để dùng nhanh khi thanh toán"}</h3>
                 </div>
               </div>
 
@@ -127,39 +127,39 @@ export default function AccountAddressesPage() {
 
               <div className="row g-3">
                 <div className="col-md-6">
-                  <label className="form-label">Ho ten nguoi nhan</label>
+                  <label className="form-label">Họ tên người nhận</label>
                   <input
                     className="form-control"
                     value={form.fullName}
                     onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))}
-                    placeholder="Nhap ho ten"
+                    placeholder="Nhập họ tên"
                   />
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label">So dien thoai</label>
+                  <label className="form-label">Số điện thoại</label>
                   <input
                     className="form-control"
                     value={form.phone}
                     onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
-                    placeholder="Nhap so dien thoai"
+                    placeholder="Nhập số điện thoại"
                   />
                 </div>
                 <div className="col-md-4">
-                  <label className="form-label">Nhan goi nho</label>
+                  <label className="form-label">Nhãn gợi nhớ</label>
                   <input
                     className="form-control"
                     value={form.label}
                     onChange={(event) => setForm((current) => ({ ...current, label: event.target.value }))}
-                    placeholder="Vi du: Nha rieng, Cong ty"
+                    placeholder="Ví dụ: Nhà riêng, Công ty"
                   />
                 </div>
                 <div className="col-md-8">
-                  <label className="form-label">Dia chi chi tiet</label>
+                  <label className="form-label">Địa chỉ chi tiết</label>
                   <input
                     className="form-control"
                     value={form.addressLine}
                     onChange={(event) => setForm((current) => ({ ...current, addressLine: event.target.value }))}
-                    placeholder="So nha, duong, phuong/xa, quan/huyen, tinh/thanh"
+                    placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành"
                   />
                 </div>
               </div>
@@ -173,31 +173,31 @@ export default function AccountAddressesPage() {
                   onChange={(event) => setForm((current) => ({ ...current, isDefault: event.target.checked }))}
                 />
                 <label className="form-check-label" htmlFor="addressDefault">
-                  Dat lam dia chi mac dinh
+                  Đặt làm địa chỉ mặc định
                 </label>
               </div>
 
               <div className="d-flex gap-2 flex-wrap mt-4">
                 <button type="submit" className="btn btn-domora" disabled={submitting}>
-                  {submitting ? "Dang luu..." : editingId ? "Cap nhat dia chi" : "Luu dia chi"}
+                  {submitting ? "Đang lưu..." : editingId ? "Cập nhật địa chỉ" : "Lưu địa chỉ"}
                 </button>
                 {editingId && (
                   <button type="button" className="btn btn-domora-outline" onClick={resetForm}>
-                    Huy sua
+                    Hủy sửa
                   </button>
                 )}
                 {fromCheckout && (
                   <button type="button" className="btn btn-domora-outline" onClick={() => navigate("/checkout")}>
-                    Tiep tuc thanh toan
+                    Tiếp tục thanh toán
                   </button>
                 )}
               </div>
             </form>
 
             {loading ? (
-              <div className="review-empty">Dang tai dia chi...</div>
+              <div className="review-empty">Đang tải địa chỉ...</div>
             ) : addresses.length === 0 ? (
-              <div className="review-empty">Ban chua luu dia chi nao.</div>
+              <div className="review-empty">Bạn chưa lưu địa chỉ nào.</div>
             ) : (
               <div className="account-review-grid">
                 {addresses.map((address) => (
@@ -210,7 +210,7 @@ export default function AccountAddressesPage() {
                         </p>
                       </div>
                       <div className={`account-status-badge ${address.isDefault ? "approved" : "hidden"}`}>
-                        {address.isDefault ? "Mac dinh" : "Dia chi da luu"}
+                        {address.isDefault ? "Mặc định" : "Địa chỉ đã lưu"}
                       </div>
                     </div>
 
@@ -219,7 +219,7 @@ export default function AccountAddressesPage() {
                     <div className="account-review-item__actions">
                       {fromCheckout && (
                         <button type="button" className="btn btn-domora" onClick={() => navigate("/checkout")}>
-                          Tiep tuc thanh toan
+                          Tiếp tục thanh toán
                         </button>
                       )}
                       {!address.isDefault && (
@@ -231,11 +231,11 @@ export default function AccountAddressesPage() {
                             await loadAddresses();
                           }}
                         >
-                          Dat mac dinh
+                          Đặt mặc định
                         </button>
                       )}
                       <button type="button" className="btn btn-domora-outline" onClick={() => handleEdit(address)}>
-                        Chinh sua
+                        Chỉnh sửa
                       </button>
                       <button
                         type="button"
@@ -248,7 +248,7 @@ export default function AccountAddressesPage() {
                           }
                         }}
                       >
-                        Xoa
+                        Xóa
                       </button>
                     </div>
                   </article>

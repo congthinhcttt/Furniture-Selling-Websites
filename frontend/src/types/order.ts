@@ -17,6 +17,10 @@ export interface OrderResponse {
   paymentMethod: string;
   paymentStatus: string;
   note?: string;
+  voucherCode?: string;
+  subtotalAmount?: number;
+  discountAmount?: number;
+  finalTotal?: number;
   totalAmount: number;
   status: string;
   vnpTxnRef?: string;

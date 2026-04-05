@@ -177,6 +177,11 @@
   padding: 28px;
 }
 
+.product-detail-feedback {
+  color: #5b4a3f;
+  font-weight: 500;
+}
+
 .product-detail-card h3 {
   margin-bottom: 18px;
   color: var(--primary-dark);

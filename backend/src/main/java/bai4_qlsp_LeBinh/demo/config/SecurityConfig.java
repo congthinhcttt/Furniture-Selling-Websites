@@ -45,12 +45,38 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .userDetailsService(accountService)
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(401);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write(
+                                    "{\"success\":false,\"message\":\"Vui lòng đăng nhập để sử dụng chức năng này\",\"data\":null}"
+                            );
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(403);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write(
+                                    "{\"success\":false,\"message\":\"Bạn không có quyền truy cập chức năng này\",\"data\":null}"
+                            );
+                        })
+                )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
+                        .requestMatchers(
+                                "/api/auth/register",
+                                "/api/auth/login",
+                                "/api/auth/forgot-password",
+                                "/api/auth/forgot-password/request",
+                                "/api/auth/forgot-password/reset"
+                        ).permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/api/payment/vnpay/**").permitAll()
                         .requestMatchers("/images/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/user/chatbot/quick-questions").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/user/chatbot/ask").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/user/products/compare").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/user/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/user/vouchers/available").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/user/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/user/category-groups/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/user/news/**").permitAll()

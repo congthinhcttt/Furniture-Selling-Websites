@@ -113,6 +113,11 @@
   font-size: 0.95rem;
 }
 
+.auth-switch-panel {
+  display: grid;
+  gap: 12px;
+}
+
 .auth-link-small,
 .auth-link-strong {
   color: #7b5a46;

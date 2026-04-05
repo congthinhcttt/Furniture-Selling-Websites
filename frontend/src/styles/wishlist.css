@@ -1,0 +1,200 @@
+.wishlist-btn {
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(93, 64, 55, 0.14);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.96);
+  color: #6b4a3b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.wishlist-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: #cc4b5a;
+  color: #cc4b5a;
+}
+
+.wishlist-btn.active {
+  background: #fff1f3;
+  border-color: #cc4b5a;
+  color: #cc4b5a;
+}
+
+.wishlist-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.wishlist-floating-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 3;
+  box-shadow: 0 10px 20px rgba(47, 33, 24, 0.12);
+}
+
+.wishlist-detail-btn {
+  min-width: 170px;
+  border-radius: 999px;
+}
+
+.wishlist-page {
+  background: #fff;
+}
+
+.wishlist-page-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 32px;
+}
+
+.wishlist-page-subtitle {
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--muted-color);
+  margin-bottom: 8px;
+}
+
+.wishlist-page-title {
+  font-family: "Playfair Display", serif;
+  font-size: clamp(2.2rem, 4vw, 3rem);
+  margin-bottom: 10px;
+}
+
+.wishlist-page-desc {
+  max-width: 640px;
+  color: #5b5b5b;
+}
+
+.wishlist-empty-state {
+  padding: 64px 24px;
+  border: 1px solid var(--border-color);
+  background: linear-gradient(135deg, #fffaf5, #f6efe6);
+  text-align: center;
+}
+
+.wishlist-empty-icon {
+  width: 84px;
+  height: 84px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  background: rgba(204, 75, 90, 0.08);
+  color: #cc4b5a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+}
+
+.wishlist-list {
+  display: grid;
+  gap: 20px;
+}
+
+.wishlist-item-card {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 22px;
+  border: 1px solid var(--border-color);
+  background: #fff;
+  padding: 18px;
+}
+
+.wishlist-item-image-wrap {
+  display: block;
+  min-height: 220px;
+  background: #f7f2ed;
+}
+
+.wishlist-item-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wishlist-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.wishlist-item-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.wishlist-item-category {
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted-color);
+  font-size: 0.82rem;
+}
+
+.wishlist-item-name {
+  color: var(--primary-dark);
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.wishlist-item-description {
+  margin: 0;
+  color: #555;
+  line-height: 1.7;
+}
+
+.wishlist-item-meta {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  color: #666;
+}
+
+.wishlist-item-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.wishlist-remove-btn {
+  border: 0;
+  background: transparent;
+  color: #b13b49;
+  font-weight: 600;
+  padding: 0;
+}
+
+.wishlist-nav-link {
+  position: relative;
+}
+
+@media (max-width: 991.98px) {
+  .wishlist-page-header {
+    flex-direction: column;
+  }
+
+  .wishlist-item-card {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .wishlist-item-top {
+    flex-direction: column;
+  }
+
+  .wishlist-item-actions {
+    flex-direction: column;
+  }
+
+  .wishlist-item-actions .btn {
+    width: 100%;
+  }
+}

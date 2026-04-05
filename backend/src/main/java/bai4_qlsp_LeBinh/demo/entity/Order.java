@@ -57,6 +57,18 @@ public class Order {
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;
 
+    @Column(name = "voucher_code", length = 50)
+    private String voucherCode;
+
+    @Column(name = "subtotal_amount")
+    private Long subtotalAmount;
+
+    @Column(name = "discount_amount")
+    private Long discountAmount;
+
+    @Column(name = "final_total")
+    private Long finalTotal;
+
     @Column(name = "total_amount", nullable = false)
     private Long totalAmount;
 

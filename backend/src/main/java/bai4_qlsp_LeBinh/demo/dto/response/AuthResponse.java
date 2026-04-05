@@ -16,6 +16,7 @@ public class AuthResponse {
     private String fullName;
     private String avatarUrl;
     private String role;
+    private String authProvider;
     private String token;
     private String tokenType;
     private Long expiresAt;

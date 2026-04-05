@@ -24,4 +24,6 @@ public class CreateOrderRequest {
     private String paymentMethod;
 
     private String note;
+
+    private String voucherCode;
 }

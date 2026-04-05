@@ -4,6 +4,7 @@ export interface AuthUser {
   fullName?: string;
   avatarUrl?: string;
   role?: string;
+  authProvider?: string;
   accountId?: number;
   token?: string;
   tokenType?: string;
@@ -17,6 +18,7 @@ export interface AuthResponseData {
   fullName?: string;
   avatarUrl?: string;
   role?: string;
+  authProvider?: string;
   token?: string;
   tokenType?: string;
   expiresAt?: number;
@@ -30,4 +32,26 @@ export interface UserProfile {
   fullName?: string;
   avatarUrl?: string;
   role?: string;
+  authProvider?: string;
+}
+
+export interface UpdateUserProfilePayload {
+  fullName?: string;
+  email?: string;
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+export interface ResetPasswordByTokenPayload {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
 }

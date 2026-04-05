@@ -22,6 +22,10 @@ public class OrderResponse {
     private String paymentMethod;
     private String paymentStatus;
     private String note;
+    private String voucherCode;
+    private Long subtotalAmount;
+    private Long discountAmount;
+    private Long finalTotal;
     private Long totalAmount;
     private String status;
     private String vnpTxnRef;

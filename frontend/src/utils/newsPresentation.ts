@@ -1,55 +1,92 @@
 import type { NewsArticle } from "../types/news";
 
-interface NewsPresentation {
-  topic: string;
+interface NewsHeroContent {
+  kicker: string;
   title: string;
-  excerpt: string;
+  description: string;
   eyebrow: string;
 }
 
-const CURATED_PRESENTATIONS: NewsPresentation[] = [
+interface NewsArticlePresentation {
+  topic: string;
+  title: string;
+  excerpt: string;
+}
+
+const PRESENTATION_BY_TITLE: Array<{
+  match: string[];
+  presentation: NewsArticlePresentation;
+}> = [
   {
-    eyebrow: "Nhật ký cảm hứng",
-    topic: "Không gian sống",
-    title: "Cách chọn giường ngủ và tủ áo cho phòng nhỏ mà vẫn thoáng",
-    excerpt:
-      "Một vài điều chỉnh về tỷ lệ, gam màu và kiểu cánh tủ có thể giúp phòng ngủ nhỏ trông nhẹ hơn, gọn hơn mà vẫn giữ được cảm giác ấm áp.",
+    match: ["giường", "tủ", "phòng nhỏ"],
+    presentation: {
+      topic: "Phòng ngủ gọn đẹp",
+      title: "Cách chọn giường ngủ và tủ áo cho phòng nhỏ mà vẫn thoáng",
+      excerpt:
+        "Ưu tiên tỷ lệ gọn, bề mặt sáng và cấu trúc lưu trữ vừa đủ để phòng ngủ nhỏ vẫn nhẹ mắt, ngăn nắp và dễ thở.",
+    },
   },
   {
-    eyebrow: "Phối cảnh tinh tế",
-    topic: "Phòng khách",
-    title: "Phối sofa, bàn trà và thảm để phòng khách hài hòa hơn",
-    excerpt:
-      "Khi sofa, bàn trà và thảm được đặt đúng nhịp, phòng khách sẽ có chiều sâu hơn và tạo cảm giác chỉn chu mà không cần quá nhiều chi tiết.",
+    match: ["sofa", "bàn trà", "thảm"],
+    presentation: {
+      topic: "Phòng khách hài hòa",
+      title: "Phối sofa, bàn trà và thảm để phòng khách hài hòa hơn",
+      excerpt:
+        "Chỉ cần cân đúng tỷ lệ và tiết chế màu sắc, khu vực tiếp khách sẽ trông liền mạch, ấm áp và có chiều sâu hơn.",
+    },
   },
   {
-    eyebrow: "Chất liệu và sắc độ",
-    topic: "Căn hộ hiện đại",
-    title: "Những gam màu giúp căn hộ hiện đại trông ấm và dễ ở hơn",
-    excerpt:
-      "Các sắc be, nâu sáng, kem và xám ấm là nền tốt để căn hộ hiện đại bớt lạnh, đồng thời làm nổi bật vẻ đẹp của gỗ, vải và ánh sáng tự nhiên.",
+    match: ["xu hướng", "2026", "căn hộ", "màu"],
+    presentation: {
+      topic: "Bảng màu hiện đại",
+      title: "Những gam màu giúp căn hộ hiện đại trông ấm và dễ ở hơn",
+      excerpt:
+        "Be cát, nâu gỗ nhạt và xanh xám dịu là những nền màu khiến không gian hiện đại bớt lạnh mà vẫn giữ vẻ tinh gọn.",
+    },
   },
 ];
 
-function clampExcerpt(value: string, maxLength = 150) {
-  const normalized = value.replace(/\s+/g, " ").trim();
-  if (normalized.length <= maxLength) {
+export function getNewsHeroContent(): NewsHeroContent {
+  return {
+    kicker: "Tạp chí cảm hứng DOMORA",
+    eyebrow: "Không gian sống được nuôi dưỡng từ những lựa chọn tinh tế",
+    title: "Ý tưởng nội thất đẹp, chậm rãi và có chiều sâu hơn mỗi ngày",
+    description:
+      "Từ cách phối đồ cho phòng khách đến những gam màu giúp căn hộ thêm ấm, DOMORA chọn lọc các bài viết ngắn gọn, giàu cảm hứng và dễ ứng dụng cho không gian sống hiện đại.",
+  };
+}
+
+export function getNewsImageUrlFallback() {
+  return "https://via.placeholder.com/1200x800?text=Tin+t%E1%BB%A9c+DOMORA";
+}
+
+export function getNewsArticlePresentation(article: NewsArticle): NewsArticlePresentation {
+  const normalizedTitle = `${article.topic} ${article.title}`.toLowerCase();
+  const matched = PRESENTATION_BY_TITLE.find((item) =>
+    item.match.every((token) => normalizedTitle.includes(token.toLowerCase()))
+  );
+
+  if (matched) {
+    return matched.presentation;
+  }
+
+  const excerpt = buildNewsExcerpt(article.content);
+  return {
+    topic: article.topic || "Góc cảm hứng",
+    title: article.title,
+    excerpt,
+  };
+}
+
+export function buildNewsExcerpt(content: string) {
+  const normalized = content.replace(/\s+/g, " ").trim();
+  if (!normalized) {
+    return "Những gợi ý ngắn gọn từ DOMORA để không gian sống trông tinh tế, cân bằng và dễ ứng dụng hơn.";
+  }
+
+  if (normalized.length <= 150) {
     return normalized;
   }
 
-  return `${normalized.slice(0, maxLength).trimEnd()}...`;
-}
-
-export function getNewsPresentation(article: NewsArticle, index: number): NewsPresentation {
-  const curated = CURATED_PRESENTATIONS[index];
-  if (curated) {
-    return curated;
-  }
-
-  return {
-    eyebrow: article.topic || "Cảm hứng DOMORA",
-    topic: article.topic || "Tin tức",
-    title: article.title,
-    excerpt: clampExcerpt(article.content),
-  };
+  return `${normalized.slice(0, 147).trimEnd()}...`;
 }

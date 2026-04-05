@@ -1,0 +1,125 @@
+.compare-btn {
+  border: 1px solid var(--border-color);
+  background: #fff;
+  color: var(--primary-color);
+  padding: 10px 14px;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.compare-btn:hover:not(:disabled),
+.compare-btn.active {
+  background: var(--bg-section);
+  border-color: var(--primary-color);
+}
+
+.compare-page {
+  background: #fff;
+}
+
+.compare-page-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+  margin-bottom: 28px;
+}
+
+.compare-page-subtitle {
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--muted-color);
+  margin-bottom: 8px;
+}
+
+.compare-page-title {
+  font-family: "Playfair Display", serif;
+  font-size: clamp(2.2rem, 4vw, 3rem);
+  margin-bottom: 10px;
+}
+
+.compare-page-desc {
+  color: #5b5b5b;
+  max-width: 640px;
+}
+
+.compare-page-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.compare-empty-state {
+  padding: 64px 24px;
+  border: 1px solid var(--border-color);
+  background: linear-gradient(135deg, #f8f4ef, #fffaf4);
+  text-align: center;
+}
+
+.compare-empty-icon {
+  width: 84px;
+  height: 84px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(93, 64, 55, 0.08);
+  color: var(--primary-color);
+  font-size: 2rem;
+}
+
+.compare-toolbar {
+  margin-bottom: 18px;
+  color: #5b5b5b;
+}
+
+.compare-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+}
+
+.compare-table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.compare-table th,
+.compare-table td {
+  border: 1px solid var(--border-color);
+  padding: 18px;
+  vertical-align: top;
+}
+
+.compare-table th {
+  width: 220px;
+  background: #faf7f3;
+  color: var(--primary-dark);
+}
+
+.compare-table-image {
+  width: 100%;
+  max-width: 220px;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: #f6f1ea;
+}
+
+.compare-product-name {
+  color: var(--primary-dark);
+  font-weight: 700;
+}
+
+.compare-actions-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (max-width: 991.98px) {
+  .compare-page-header {
+    flex-direction: column;
+  }
+}

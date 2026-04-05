@@ -1,7 +1,9 @@
 package bai4_qlsp_LeBinh.demo.controller;
 
+import bai4_qlsp_LeBinh.demo.dto.request.ForgotPasswordEmailRequest;
 import bai4_qlsp_LeBinh.demo.dto.request.LoginRequest;
 import bai4_qlsp_LeBinh.demo.dto.request.RegisterRequest;
+import bai4_qlsp_LeBinh.demo.dto.request.ResetPasswordByTokenRequest;
 import bai4_qlsp_LeBinh.demo.dto.response.ApiResponse;
 import bai4_qlsp_LeBinh.demo.dto.response.AuthResponse;
 import bai4_qlsp_LeBinh.demo.dto.response.UserProfileResponse;
@@ -30,7 +32,7 @@ public class AuthController {
         return ResponseEntity.ok(
                 ApiResponse.<AuthResponse>builder()
                         .success(true)
-                        .message("Dang ky thanh cong")
+                        .message("Đăng ký thành công")
                         .data(authService.register(request))
                         .build()
         );
@@ -41,8 +43,44 @@ public class AuthController {
         return ResponseEntity.ok(
                 ApiResponse.<AuthResponse>builder()
                         .success(true)
-                        .message("Dang nhap thanh cong")
+                        .message("Đăng nhập thành công")
                         .data(authService.login(request))
+                        .build()
+        );
+    }
+
+    @PostMapping("/forgot-password/request")
+    public ResponseEntity<ApiResponse<Object>> requestForgotPassword(
+            @Valid @RequestBody ForgotPasswordEmailRequest request
+    ) {
+        authService.requestPasswordReset(request);
+        return ResponseEntity.ok(
+                ApiResponse.builder()
+                        .success(true)
+                        .message("Đã gửi email hướng dẫn đặt lại mật khẩu")
+                        .data(null)
+                        .build()
+        );
+    }
+
+    // Backward-compatible endpoint for old frontend clients
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Object>> requestForgotPasswordLegacy(
+            @Valid @RequestBody ForgotPasswordEmailRequest request
+    ) {
+        return requestForgotPassword(request);
+    }
+
+    @PostMapping("/forgot-password/reset")
+    public ResponseEntity<ApiResponse<Object>> resetForgotPassword(
+            @Valid @RequestBody ResetPasswordByTokenRequest request
+    ) {
+        authService.resetPasswordByToken(request);
+        return ResponseEntity.ok(
+                ApiResponse.builder()
+                        .success(true)
+                        .message("Đặt lại mật khẩu thành công")
+                        .data(null)
                         .build()
         );
     }
@@ -52,7 +90,7 @@ public class AuthController {
         return ResponseEntity.ok(
                 ApiResponse.<UserProfileResponse>builder()
                         .success(true)
-                        .message("Lay thong tin tai khoan thanh cong")
+                        .message("Lấy thông tin tài khoản thành công")
                         .data(authService.getCurrentUser(authentication.getName()))
                         .build()
         );

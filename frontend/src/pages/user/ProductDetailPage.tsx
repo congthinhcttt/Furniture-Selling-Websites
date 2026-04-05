@@ -1,13 +1,25 @@
-﻿import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { getApiErrorMessage } from "../../api/authApi";
 import { addToCart } from "../../api/cartApi";
-import { useAuth } from "../../hooks/useAuth";
 import { getProductById, getProducts } from "../../api/productApi";
-import { getProductReviews, getProductReviewSummary, markReviewHelpful, unmarkReviewHelpful } from "../../api/reviewApi";
+import {
+  getProductReviews,
+  getProductReviewSummary,
+  markReviewHelpful,
+  unmarkReviewHelpful,
+} from "../../api/reviewApi";
+import {
+  addProductToWishlist,
+  getMyWishlist,
+  removeProductFromWishlist,
+} from "../../api/wishlistApi";
+import CompareButton from "../../components/common/CompareButton";
+import WishlistButton from "../../components/common/WishlistButton";
 import ReviewList from "../../components/review/ReviewList";
 import ReviewSummary from "../../components/review/ReviewSummary";
+import { useAuth } from "../../hooks/useAuth";
 import type { Product } from "../../types/product";
 import type {
   Review,
@@ -15,6 +27,7 @@ import type {
   ReviewQueryParams,
   ReviewSummary as ReviewSummaryType,
 } from "../../types/review";
+import { getCompareProductIds, toggleCompareProduct } from "../../utils/compareStorage";
 import { getColorSwatch } from "../../utils/color";
 import { buildImageUrl } from "../../utils/image";
 
@@ -41,8 +54,8 @@ function buildProductHighlights(product: Product) {
 
 function buildMaterialNotes(product: Product) {
   return [
-    "Khung và bề mặt hoàn thiện theo phong cách nội thất hiện đại, dễ phối với nhiều không gian.",
-    `Tông ${product.color?.toLowerCase() || "trung tính"} giúp sản phẩm dễ kết hợp với các món nội thất khác.`,
+    `Chất liệu: ${product.material || "đang cập nhật"}.`,
+    `Bảo hành: ${product.warranty || "đang cập nhật"}.`,
     "Phù hợp cho căn hộ, nhà phố và khu vực trưng bày theo phong cách tối giản hoặc ấm cúng.",
   ];
 }
@@ -54,22 +67,24 @@ export default function ProductDetailPage() {
   const { auth } = useAuth();
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
+  const [compareIds, setCompareIds] = useState<number[]>(() => getCompareProductIds());
   const [selectedColor, setSelectedColor] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [addToCartLoading, setAddToCartLoading] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [wishlistLoadingId, setWishlistLoadingId] = useState<number | null>(null);
   const [cartMessage, setCartMessage] = useState("");
+  const [wishlistMessage, setWishlistMessage] = useState("");
+  const [compareMessage, setCompareMessage] = useState("");
   const [reviewSummary, setReviewSummary] = useState<ReviewSummaryType | null>(null);
   const [reviewPage, setReviewPage] = useState<ReviewPageResponse | null>(null);
   const [reviewLoading, setReviewLoading] = useState(true);
   const [reviewError, setReviewError] = useState("");
   const [helpfulLoadingId, setHelpfulLoadingId] = useState<number | null>(null);
-  const [reviewQuery, setReviewQuery] = useState<ReviewQueryParams>({
-    page: 1,
-    size: 6,
-    sort: "newest",
-  });
+  const [reviewQuery, setReviewQuery] = useState<ReviewQueryParams>({ page: 1, size: 6, sort: "newest" });
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -88,8 +103,7 @@ export default function ProductDetailPage() {
         setQuantity(data.stockQuantity > 0 ? 1 : 0);
 
         if (data.categoryId) {
-          const productsInCategory = await getProducts({ categoryId: data.categoryId });
-          setRelatedProducts(productsInCategory);
+          setRelatedProducts(await getProducts({ categoryId: data.categoryId }));
         } else {
           setRelatedProducts([]);
         }
@@ -104,15 +118,41 @@ export default function ProductDetailPage() {
     void fetchProduct();
   }, [id]);
 
-  const colorOptions = useMemo(() => {
-    return Array.from(
-      new Set(
-        relatedProducts
-          .map((item) => item.color?.trim())
-          .filter((value): value is string => Boolean(value))
-      )
-    );
-  }, [relatedProducts]);
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      if (!auth?.token) {
+        setWishlistIds(new Set());
+        return;
+      }
+
+      try {
+        const items = await getMyWishlist();
+        setWishlistIds(new Set(items.map((item) => item.productId)));
+      } catch {
+        setWishlistIds(new Set());
+      }
+    };
+
+    void fetchWishlist();
+  }, [auth?.token]);
+
+  useEffect(() => {
+    const syncCompare = () => setCompareIds(getCompareProductIds());
+    window.addEventListener("compare-updated", syncCompare);
+    return () => window.removeEventListener("compare-updated", syncCompare);
+  }, []);
+
+  const colorOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          relatedProducts
+            .map((item) => item.color?.trim())
+            .filter((value): value is string => Boolean(value))
+        )
+      ),
+    [relatedProducts]
+  );
 
   const similarProducts = useMemo(() => {
     const pool =
@@ -122,6 +162,15 @@ export default function ProductDetailPage() {
 
     return pool.filter((item) => item.id !== product?.id).slice(0, 4);
   }, [product?.id, relatedProducts, selectedColor]);
+
+  const detailHighlights = product ? buildProductHighlights(product) : [];
+  const materialNotes = product ? buildMaterialNotes(product) : [];
+  const featuredReview =
+    reviewPage?.items.find((item) => item.featured) ||
+    reviewPage?.items.find((item) => item.images.length > 0) ||
+    null;
+  const customerImages = (reviewPage?.items.flatMap((item) => item.images) ?? []).slice(0, 6);
+  const maxSelectableQuantity = product?.stockQuantity ?? 1;
 
   const handleAddToCart = async () => {
     if (!product || product.stockQuantity <= 0 || quantity <= 0) {
@@ -151,20 +200,61 @@ export default function ProductDetailPage() {
     }
   };
 
-  const detailHighlights = product ? buildProductHighlights(product) : [];
-  const materialNotes = product ? buildMaterialNotes(product) : [];
-  const featuredReview =
-    reviewPage?.items.find((item) => item.featured) || reviewPage?.items.find((item) => item.images.length > 0) || null;
-  const customerImages = (reviewPage?.items.flatMap((item) => item.images) ?? []).slice(0, 6);
-  const maxSelectableQuantity = product?.stockQuantity ?? 1;
+  const handleWishlistToggle = async (productId: number, isMainProduct = false) => {
+    if (!auth?.token) {
+      navigate("/login", { state: { from: `${location.pathname}${location.search}` } });
+      return;
+    }
 
-  const decreaseQuantity = () => {
-    setQuantity((current) => Math.max(1, current - 1));
+    try {
+      if (isMainProduct) {
+        setWishlistLoading(true);
+        setWishlistMessage("");
+      } else {
+        setWishlistLoadingId(productId);
+      }
+
+      if (wishlistIds.has(productId)) {
+        await removeProductFromWishlist(productId);
+        setWishlistIds((current) => {
+          const next = new Set(current);
+          next.delete(productId);
+          return next;
+        });
+        if (isMainProduct) setWishlistMessage("Đã xóa sản phẩm khỏi danh sách yêu thích.");
+      } else {
+        await addProductToWishlist(productId);
+        setWishlistIds((current) => new Set(current).add(productId));
+        if (isMainProduct) setWishlistMessage("Đã thêm sản phẩm vào danh sách yêu thích.");
+      }
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        navigate("/login", { state: { from: `${location.pathname}${location.search}` } });
+        return;
+      }
+
+      const message = getApiErrorMessage(err, "Không thể cập nhật danh sách yêu thích.");
+      if (isMainProduct) setWishlistMessage(message);
+      else setError(message);
+    } finally {
+      if (isMainProduct) setWishlistLoading(false);
+      else setWishlistLoadingId(null);
+    }
   };
 
-  const increaseQuantity = () => {
-    setQuantity((current) => Math.min(maxSelectableQuantity, current + 1));
+  const handleCompareToggle = (productId: number) => {
+    try {
+      setCompareMessage("");
+      const result = toggleCompareProduct(productId);
+      setCompareIds(result.productIds);
+      setCompareMessage(result.message);
+    } catch (err) {
+      setCompareMessage(err instanceof Error ? err.message : "Không thể cập nhật danh sách so sánh.");
+    }
   };
+
+  const decreaseQuantity = () => setQuantity((current) => Math.max(1, current - 1));
+  const increaseQuantity = () => setQuantity((current) => Math.min(maxSelectableQuantity, current + 1));
 
   const loadReviewData = async (targetProductId: number, params: ReviewQueryParams) => {
     try {
@@ -184,13 +274,9 @@ export default function ProductDetailPage() {
   };
 
   useEffect(() => {
-    if (!product?.id) {
-      return;
-    }
-
+    if (!product?.id) return;
     void loadReviewData(product.id, reviewQuery);
   }, [product?.id, reviewQuery.page, reviewQuery.rating, reviewQuery.sort, reviewQuery.withImages, reviewQuery.longContentOnly]);
-
 
   const handleHelpfulToggle = async (review: Review) => {
     if (!auth?.token) {
@@ -267,29 +353,24 @@ export default function ProductDetailPage() {
                 <p className="product-detail-category">{product.categoryName || "Nội thất"}</p>
                 <h1 className="product-detail-title">{product.name}</h1>
                 <p className="product-detail-price">{formatPrice(product.price)}</p>
-
-                {product.description && (
-                  <p className="product-detail-summary">{product.description}</p>
-                )}
+                {product.description && <p className="product-detail-summary">{product.description}</p>}
 
                 <div className="product-detail-divider"></div>
 
                 <div className="product-detail-option">
                   <span className="product-detail-option-label">Màu sắc</span>
                   <div className="product-color-list">
-                    {(colorOptions.length > 0 ? colorOptions : [product.color || "Mặc định"]).map(
-                      (color) => (
-                        <button
-                          type="button"
-                          key={color}
-                          className={`product-color-chip ${selectedColor === color ? "active" : ""}`}
-                          onClick={() => setSelectedColor(color)}
-                        >
-                          <span className="product-color-dot" style={getColorSwatch(color)}></span>
-                          {color}
-                        </button>
-                      )
-                    )}
+                    {(colorOptions.length > 0 ? colorOptions : [product.color || "Mặc định"]).map((color) => (
+                      <button
+                        type="button"
+                        key={color}
+                        className={`product-color-chip ${selectedColor === color ? "active" : ""}`}
+                        onClick={() => setSelectedColor(color)}
+                      >
+                        <span className="product-color-dot" style={getColorSwatch(color)}></span>
+                        {color}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -300,13 +381,13 @@ export default function ProductDetailPage() {
                       <strong>Kích thước:</strong> {formatDimensions(product)}
                     </div>
                     <div>
-                      <strong>Màu đang chọn:</strong> {selectedColor || product.color || "Đang cập nhật"}
+                      <strong>Chất liệu:</strong> {product.material || "Đang cập nhật"}
+                    </div>
+                    <div>
+                      <strong>Bảo hành:</strong> {product.warranty || "Đang cập nhật"}
                     </div>
                     <div>
                       <strong>Tồn kho:</strong> {product.stockQuantity}
-                    </div>
-                    <div>
-                      <strong>Danh mục:</strong> {product.categoryName || "Nội thất"}
                     </div>
                   </div>
                 </div>
@@ -351,12 +432,37 @@ export default function ProductDetailPage() {
                         ? "Đang xử lý..."
                         : "Thêm vào giỏ"}
                   </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-domora-outline wishlist-detail-btn"
+                    onClick={() => handleWishlistToggle(product.id, true)}
+                    disabled={wishlistLoading}
+                  >
+                    <i
+                      className={`bi me-2 ${wishlistIds.has(product.id) ? "bi-heart-fill text-danger" : "bi-heart"}`}
+                    ></i>
+                    {wishlistLoading
+                      ? "Đang xử lý..."
+                      : wishlistIds.has(product.id)
+                        ? "Đã yêu thích"
+                        : "Yêu thích"}
+                  </button>
+
+                  <CompareButton
+                    active={compareIds.includes(product.id)}
+                    onClick={() => handleCompareToggle(product.id)}
+                    className="wishlist-detail-btn"
+                  />
+
                   <Link to="/products" className="btn btn-domora-outline">
                     Tiếp tục xem sản phẩm
                   </Link>
                 </div>
 
                 {cartMessage && <p className="product-detail-feedback mb-0 mt-3">{cartMessage}</p>}
+                {wishlistMessage && <p className="product-detail-feedback mb-0 mt-2">{wishlistMessage}</p>}
+                {compareMessage && <p className="product-detail-feedback mb-0 mt-2">{compareMessage}</p>}
               </div>
             </div>
           </div>
@@ -373,7 +479,6 @@ export default function ProductDetailPage() {
                   </ul>
                 </div>
               </div>
-
               <div className="col-lg-6">
                 <div className="product-detail-card">
                   <h3>Chất liệu và sử dụng</h3>
@@ -399,12 +504,14 @@ export default function ProductDetailPage() {
                   <div className="col-6 col-md-4 col-xl-3" key={item.id}>
                     <div className="product-card h-100">
                       <div className="product-card-image-wrap">
+                        <WishlistButton
+                          active={wishlistIds.has(item.id)}
+                          loading={wishlistLoadingId === item.id}
+                          onClick={() => handleWishlistToggle(item.id)}
+                          className="wishlist-floating-btn"
+                        />
                         <Link to={`/products/${item.id}`}>
-                          <img
-                            src={getImageUrl(item.image)}
-                            alt={item.name}
-                            className="product-card-image"
-                          />
+                          <img src={getImageUrl(item.image)} alt={item.name} className="product-card-image" />
                         </Link>
                       </div>
 
@@ -416,12 +523,15 @@ export default function ProductDetailPage() {
                         <div className="product-price-box">
                           <span className="product-price">{formatPrice(item.price)}</span>
                         </div>
-                        <Link
-                          to={`/products/${item.id}`}
-                          className="btn btn-domora-outline btn-sm w-100"
-                        >
-                          Xem chi tiết
-                        </Link>
+                        <div className="d-grid gap-2">
+                          <CompareButton
+                            active={compareIds.includes(item.id)}
+                            onClick={() => handleCompareToggle(item.id)}
+                          />
+                          <Link to={`/products/${item.id}`} className="btn btn-domora-outline btn-sm w-100">
+                            Xem chi tiết
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -516,11 +626,7 @@ export default function ProductDetailPage() {
                       type="checkbox"
                       checked={Boolean(reviewQuery.withImages)}
                       onChange={(event) =>
-                        setReviewQuery((current) => ({
-                          ...current,
-                          page: 1,
-                          withImages: event.target.checked,
-                        }))
+                        setReviewQuery((current) => ({ ...current, page: 1, withImages: event.target.checked }))
                       }
                     />
                     <span className="form-check-label">Chỉ review có ảnh</span>
@@ -556,10 +662,7 @@ export default function ProductDetailPage() {
                       className="btn btn-domora-outline btn-sm"
                       disabled={reviewPage.currentPage <= 1}
                       onClick={() =>
-                        setReviewQuery((current) => ({
-                          ...current,
-                          page: Math.max(1, (current.page || 1) - 1),
-                        }))
+                        setReviewQuery((current) => ({ ...current, page: Math.max(1, (current.page || 1) - 1) }))
                       }
                     >
                       Trước
@@ -583,7 +686,7 @@ export default function ProductDetailPage() {
                   </div>
                 )}
 
-                                <div className="review-cta">
+                <div className="review-cta">
                   <h3>Muốn chia sẻ trải nghiệm?</h3>
                   <p>Bạn hãy vào Tài khoản cá nhân &gt; Đánh giá của tôi để viết hoặc chỉnh sửa đánh giá.</p>
                   <p className="mb-0">Đánh giá chỉ hiển thị công khai sau khi admin duyệt.</p>
@@ -596,4 +699,3 @@ export default function ProductDetailPage() {
     </section>
   );
 }
-

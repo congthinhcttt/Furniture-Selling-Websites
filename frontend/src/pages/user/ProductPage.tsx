@@ -1,17 +1,31 @@
-import { Link, useSearchParams } from "react-router-dom";
+import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { getApiErrorMessage } from "../../api/authApi";
 import { getCategoryGroups } from "../../api/categoryApi";
-import Pagination from "../../components/common/Pagination";
 import { getProducts } from "../../api/productApi";
+import {
+  addProductToWishlist,
+  getMyWishlist,
+  removeProductFromWishlist,
+} from "../../api/wishlistApi";
+import CompareButton from "../../components/common/CompareButton";
+import Pagination from "../../components/common/Pagination";
+import WishlistButton from "../../components/common/WishlistButton";
+import { useAuth } from "../../hooks/useAuth";
 import type { CategoryGroup } from "../../types/categoryGroup";
 import type { Product } from "../../types/product";
-import { API_BASE_URL } from "../../config/runtime";
+import {
+  getCompareProductIds,
+  toggleCompareProduct,
+} from "../../utils/compareStorage";
 import { getColorSwatch } from "../../utils/color";
 import { buildImageUrl } from "../../utils/image";
 import { clampPage, getTotalPages, paginateItems } from "../../utils/pagination";
 
 type SortType = "" | "priceAsc" | "priceDesc" | "newest";
 type PriceFilter = "under5" | "5to10" | "10to20" | "over20";
+
 const PRODUCTS_PER_PAGE = 12;
 
 const priceLabels: Record<PriceFilter, string> = {
@@ -49,9 +63,15 @@ function formatFilterLabel(value: string) {
 }
 
 export default function ProductPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { auth } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
+  const [compareIds, setCompareIds] = useState<number[]>(() => getCompareProductIds());
+  const [wishlistLoadingId, setWishlistLoadingId] = useState<number | null>(null);
   const [categoryGroups, setCategoryGroups] = useState<CategoryGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -66,9 +86,7 @@ export default function ProductPage() {
   const selectedPage = Number(searchParams.get("page") || "1");
   const categoryIdsKey = selectedCategoryIds.join(",");
 
-  const selectedGroup = categoryGroups.find(
-    (group) => String(group.id) === selectedGroupId
-  );
+  const selectedGroup = categoryGroups.find((group) => String(group.id) === selectedGroupId);
 
   const hasActiveFilter =
     !!selectedKeyword ||
@@ -79,7 +97,10 @@ export default function ProductPage() {
 
   const productHeroStyle = selectedGroup?.bannerImage
     ? {
-        background: `linear-gradient(to right, rgba(61, 40, 24, 0.72), rgba(61, 40, 24, 0.35)), url(${API_BASE_URL}/images/${selectedGroup.bannerImage}) center center / cover no-repeat`,
+        background: `linear-gradient(to right, rgba(61, 40, 24, 0.72), rgba(61, 40, 24, 0.35)), url(${buildImageUrl(
+          selectedGroup.bannerImage,
+          "/images/groups/fallback-group.jpg"
+        )}) center center / cover no-repeat`,
       }
     : selectedGroup?.slug && fallbackBannerBySlug[selectedGroup.slug]
       ? { background: fallbackBannerBySlug[selectedGroup.slug] }
@@ -88,15 +109,14 @@ export default function ProductPage() {
   useEffect(() => {
     const fetchCategoryGroups = async () => {
       try {
-        const data = await getCategoryGroups();
-        setCategoryGroups(data);
+        setCategoryGroups(await getCategoryGroups());
       } catch (err) {
         console.error(err);
         setCategoryGroups([]);
       }
     };
 
-    fetchCategoryGroups();
+    void fetchCategoryGroups();
   }, []);
 
   useEffect(() => {
@@ -121,8 +141,32 @@ export default function ProductPage() {
       }
     };
 
-    fetchProducts();
+    void fetchProducts();
   }, [selectedGroupId, categoryIdsKey]);
+
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      if (!auth?.token) {
+        setWishlistIds(new Set());
+        return;
+      }
+
+      try {
+        const items = await getMyWishlist();
+        setWishlistIds(new Set(items.map((item) => item.productId)));
+      } catch {
+        setWishlistIds(new Set());
+      }
+    };
+
+    void fetchWishlist();
+  }, [auth?.token]);
+
+  useEffect(() => {
+    const syncCompare = () => setCompareIds(getCompareProductIds());
+    window.addEventListener("compare-updated", syncCompare);
+    return () => window.removeEventListener("compare-updated", syncCompare);
+  }, []);
 
   const colorOptions = useMemo(() => {
     return Array.from(
@@ -150,12 +194,7 @@ export default function ProductPage() {
     if (selectedKeyword) {
       const normalizedKeyword = selectedKeyword.toLowerCase();
       result = result.filter((product) => {
-        const haystacks = [
-          product.name,
-          product.categoryName,
-          product.color,
-          getDimensionLabel(product),
-        ];
+        const haystacks = [product.name, product.categoryName, product.color, getDimensionLabel(product)];
         return haystacks.some((value) =>
           value ? value.toLowerCase().includes(normalizedKeyword) : false
         );
@@ -165,40 +204,26 @@ export default function ProductPage() {
     if (selectedPrices.length > 0) {
       result = result.filter((product) =>
         selectedPrices.some((priceKey) => {
-          if (priceKey === "under5") {
-            return product.price < 5000000;
-          }
-          if (priceKey === "5to10") {
-            return product.price >= 5000000 && product.price <= 10000000;
-          }
-          if (priceKey === "10to20") {
-            return product.price > 10000000 && product.price <= 20000000;
-          }
-          if (priceKey === "over20") {
-            return product.price > 20000000;
-          }
+          if (priceKey === "under5") return product.price < 5000000;
+          if (priceKey === "5to10") return product.price >= 5000000 && product.price <= 10000000;
+          if (priceKey === "10to20") return product.price > 10000000 && product.price <= 20000000;
+          if (priceKey === "over20") return product.price > 20000000;
           return true;
         })
       );
     }
 
     if (selectedColors.length > 0) {
-      result = result.filter((product) =>
-        product.color ? selectedColors.includes(product.color) : false
-      );
+      result = result.filter((product) => (product.color ? selectedColors.includes(product.color) : false));
     }
 
     if (selectedSizes.length > 0) {
       result = result.filter((product) => selectedSizes.includes(getDimensionLabel(product)));
     }
 
-    if (selectedSort === "priceAsc") {
-      result.sort((a, b) => a.price - b.price);
-    } else if (selectedSort === "priceDesc") {
-      result.sort((a, b) => b.price - a.price);
-    } else if (selectedSort === "newest") {
-      result.sort((a, b) => b.id - a.id);
-    }
+    if (selectedSort === "priceAsc") result.sort((a, b) => a.price - b.price);
+    else if (selectedSort === "priceDesc") result.sort((a, b) => b.price - a.price);
+    else if (selectedSort === "newest") result.sort((a, b) => b.id - a.id);
 
     return result;
   }, [products, selectedKeyword, selectedPrices, selectedColors, selectedSizes, selectedSort]);
@@ -216,26 +241,16 @@ export default function ProductPage() {
   useEffect(() => {
     if (selectedPage !== currentPage) {
       const next = new URLSearchParams(searchParams);
-
-      if (currentPage === 1) {
-        next.delete("page");
-      } else {
-        next.set("page", String(currentPage));
-      }
-
+      if (currentPage === 1) next.delete("page");
+      else next.set("page", String(currentPage));
       setSearchParams(next, { replace: true });
     }
   }, [currentPage, searchParams, selectedPage, setSearchParams]);
 
   const updatePage = (page: number) => {
     const next = new URLSearchParams(searchParams);
-
-    if (page <= 1) {
-      next.delete("page");
-    } else {
-      next.set("page", String(page));
-    }
-
+    if (page <= 1) next.delete("page");
+    else next.set("page", String(page));
     setSearchParams(next);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -243,13 +258,10 @@ export default function ProductPage() {
   const updateMultiValue = (key: string, value: string, checked: boolean) => {
     const next = new URLSearchParams(searchParams);
     const currentValues = next.getAll(key);
-
     next.delete(key);
-
     const updatedValues = checked
       ? [...currentValues, value]
       : currentValues.filter((item) => item !== value);
-
     updatedValues.forEach((item) => next.append(key, item));
     next.delete("page");
     setSearchParams(next);
@@ -257,28 +269,17 @@ export default function ProductPage() {
 
   const updateSort = (value: string) => {
     const next = new URLSearchParams(searchParams);
-
-    if (value) {
-      next.set("sort", value);
-    } else {
-      next.delete("sort");
-    }
-
+    if (value) next.set("sort", value);
+    else next.delete("sort");
     next.delete("page");
     setSearchParams(next);
   };
 
   const updateGroup = (groupId: string) => {
     const next = new URLSearchParams(searchParams);
-
     next.delete("categoryIds");
-
-    if (groupId) {
-      next.set("groupId", groupId);
-    } else {
-      next.delete("groupId");
-    }
-
+    if (groupId) next.set("groupId", groupId);
+    else next.delete("groupId");
     next.delete("page");
     setSearchParams(next);
     setOpenDropdown(null);
@@ -286,16 +287,51 @@ export default function ProductPage() {
 
   const clearFilters = () => {
     const next = new URLSearchParams();
-
-    if (selectedGroupId) {
-      next.set("groupId", selectedGroupId);
-    }
-
-    if (selectedKeyword) {
-      next.set("q", selectedKeyword);
-    }
-
+    if (selectedGroupId) next.set("groupId", selectedGroupId);
+    if (selectedKeyword) next.set("q", selectedKeyword);
     setSearchParams(next);
+  };
+
+  const handleWishlistToggle = async (productId: number) => {
+    if (!auth?.token) {
+      navigate("/login", { state: { from: `${location.pathname}${location.search}` } });
+      return;
+    }
+
+    try {
+      setWishlistLoadingId(productId);
+      setError("");
+
+      if (wishlistIds.has(productId)) {
+        await removeProductFromWishlist(productId);
+        setWishlistIds((current) => {
+          const next = new Set(current);
+          next.delete(productId);
+          return next;
+        });
+      } else {
+        await addProductToWishlist(productId);
+        setWishlistIds((current) => new Set(current).add(productId));
+      }
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        navigate("/login", { state: { from: `${location.pathname}${location.search}` } });
+        return;
+      }
+      setError(getApiErrorMessage(err, "Không thể cập nhật danh sách yêu thích."));
+    } finally {
+      setWishlistLoadingId(null);
+    }
+  };
+
+  const handleCompareToggle = (productId: number) => {
+    try {
+      setError("");
+      const result = toggleCompareProduct(productId);
+      setCompareIds(result.productIds);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể cập nhật danh sách so sánh.");
+    }
   };
 
   return (
@@ -349,6 +385,8 @@ export default function ProductPage() {
             </div>
           </div>
 
+          {error && <div className="alert alert-danger">{error}</div>}
+
           <div className="filter-bar">
             <div className="filter-label-wrap">
               <span className="filter-icon">
@@ -362,9 +400,7 @@ export default function ProductPage() {
                 <button
                   type="button"
                   className="filter-toggle"
-                  onClick={() =>
-                    setOpenDropdown(openDropdown === "category" ? null : "category")
-                  }
+                  onClick={() => setOpenDropdown(openDropdown === "category" ? null : "category")}
                 >
                   Danh mục
                 </button>
@@ -379,7 +415,6 @@ export default function ProductPage() {
                       >
                         Tất cả sản phẩm
                       </button>
-
                       {categoryGroups.map((group) => (
                         <button
                           type="button"
@@ -405,7 +440,6 @@ export default function ProductPage() {
                 >
                   Giá sản phẩm
                 </button>
-
                 <div className="filter-dropdown-menu">
                   {Object.entries(priceLabels).map(([value, label]) => (
                     <label className="filter-check-item" key={value}>
@@ -428,7 +462,6 @@ export default function ProductPage() {
                 >
                   Màu sắc
                 </button>
-
                 <div className="filter-dropdown-menu">
                   {colorOptions.length > 0 ? (
                     colorOptions.map((value) => (
@@ -455,7 +488,6 @@ export default function ProductPage() {
                 >
                   Kích thước
                 </button>
-
                 <div className="filter-dropdown-menu">
                   {sizeOptions.length > 0 ? (
                     sizeOptions.map((value) => (
@@ -484,28 +516,23 @@ export default function ProductPage() {
             </div>
           </div>
 
-          {(selectedPrices.length > 0 ||
-            selectedColors.length > 0 ||
-            selectedSizes.length > 0) && (
+          {(selectedPrices.length > 0 || selectedColors.length > 0 || selectedSizes.length > 0 || selectedKeyword) && (
             <div className="active-filters">
               {selectedPrices.map((price) => (
                 <span className="active-filter-chip" key={`price-${price}`}>
                   GIÁ: {priceLabels[price]}
                 </span>
               ))}
-
               {selectedKeyword && (
                 <span className="active-filter-chip" key={`keyword-${selectedKeyword}`}>
                   TÌM: {selectedKeyword}
                 </span>
               )}
-
               {selectedColors.map((color) => (
                 <span className="active-filter-chip" key={`color-${color}`}>
                   MÀU: {formatFilterLabel(color)}
                 </span>
               ))}
-
               {selectedSizes.map((size) => (
                 <span className="active-filter-chip" key={`size-${size}`}>
                   KÍCH THƯỚC: {formatFilterLabel(size)}
@@ -516,82 +543,74 @@ export default function ProductPage() {
 
           {loading ? (
             <div className="text-center py-5">Đang tải sản phẩm...</div>
-          ) : error ? (
-            <div className="empty-product-box text-center">
-              <h4>Có lỗi xảy ra</h4>
-              <p>{error}</p>
-            </div>
           ) : displayProducts.length > 0 ? (
             <>
               <div className="product-results-meta">
                 Hiển thị {paginatedProducts.length} / {displayProducts.length} sản phẩm
               </div>
-            <div className="row g-4">
-              {paginatedProducts.map((product) => (
-                <div className="col-6 col-md-4 col-lg-3" key={product.id}>
-                  <div className="product-card">
-                    <div className="product-card-image-wrap">
-                      <Link to={`/products/${product.id}`}>
-                        <img
-                          src={
-                            buildImageUrl(
+              <div className="row g-4">
+                {paginatedProducts.map((product) => (
+                  <div className="col-6 col-md-4 col-lg-3" key={product.id}>
+                    <div className="product-card">
+                      <div className="product-card-image-wrap">
+                        <WishlistButton
+                          active={wishlistIds.has(product.id)}
+                          loading={wishlistLoadingId === product.id}
+                          onClick={() => handleWishlistToggle(product.id)}
+                          className="wishlist-floating-btn"
+                        />
+                        <Link to={`/products/${product.id}`}>
+                          <img
+                            src={buildImageUrl(
                               product.image,
                               "https://via.placeholder.com/400x320?text=%E1%BA%A2nh+ch%C6%B0a+c%C3%B3"
-                            )
-                          }
-                          alt={product.name}
-                          className="product-card-image"
-                        />
-                      </Link>
-                    </div>
-
-                    <div className="product-card-body">
-                      <p className="product-category">{product.categoryName || "Nội thất"}</p>
-
-                      <h3 className="product-name">
-                        <Link to={`/products/${product.id}`}>{product.name}</Link>
-                      </h3>
-
-                      {product.color && (
-                        <div className="product-card-color">
-                          <span
-                            className="product-card-color-dot"
-                            style={getColorSwatch(product.color)}
-                          ></span>
-                          <span>{product.color}</span>
-                        </div>
-                      )}
-
-                      <p className="product-card-size">{getDimensionLabel(product)}</p>
-
-                      <p className="product-card-stock">
-                        {product.stockQuantity > 0
-                          ? `Còn ${product.stockQuantity} sản phẩm`
-                          : "Tạm hết hàng"}
-                      </p>
-
-                      <div className="product-price-box">
-                        <span className="product-price">{formatPrice(product.price)}</span>
+                            )}
+                            alt={product.name}
+                            className="product-card-image"
+                          />
+                        </Link>
                       </div>
 
-                      <div className="product-card-actions">
-                        <Link
-                          to={`/products/${product.id}`}
-                          className="btn btn-domora-outline btn-sm w-100"
-                        >
-                          Xem chi tiết
-                        </Link>
+                      <div className="product-card-body">
+                        <p className="product-category">{product.categoryName || "Nội thất"}</p>
+                        <h3 className="product-name">
+                          <Link to={`/products/${product.id}`}>{product.name}</Link>
+                        </h3>
+
+                        {product.color && (
+                          <div className="product-card-color">
+                            <span
+                              className="product-card-color-dot"
+                              style={getColorSwatch(product.color)}
+                            ></span>
+                            <span>{product.color}</span>
+                          </div>
+                        )}
+
+                        <p className="product-card-size">{getDimensionLabel(product)}</p>
+                        <p className="product-card-stock">
+                          {product.stockQuantity > 0 ? `Còn ${product.stockQuantity} sản phẩm` : "Tạm hết hàng"}
+                        </p>
+
+                        <div className="product-price-box">
+                          <span className="product-price">{formatPrice(product.price)}</span>
+                        </div>
+
+                        <div className="d-grid gap-2 product-card-actions">
+                          <CompareButton
+                            active={compareIds.includes(product.id)}
+                            onClick={() => handleCompareToggle(product.id)}
+                          />
+                          <Link to={`/products/${product.id}`} className="btn btn-domora-outline btn-sm w-100">
+                            Xem chi tiết
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={updatePage}
-              />
+                ))}
+              </div>
+              <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={updatePage} />
             </>
           ) : (
             <div className="empty-product-box text-center">
