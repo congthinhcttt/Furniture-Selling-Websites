@@ -59,20 +59,24 @@ export default function AdminCategoriesPage() {
   const [categoryPage, setCategoryPage] = useState(1);
   const [isGroupFormModalOpen, setIsGroupFormModalOpen] = useState(false);
   const [isCategoryFormModalOpen, setIsCategoryFormModalOpen] = useState(false);
+  const [isGroupFilterOpen, setIsGroupFilterOpen] = useState(false);
+  const [isCategoryFilterOpen, setIsCategoryFilterOpen] = useState(false);
+  const [groupFilterKeyword, setGroupFilterKeyword] = useState("");
+  const [categoryFilters, setCategoryFilters] = useState({
+    keyword: "",
+    groupId: "",
+  });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError("");
-        const [categoryData, groupData] = await Promise.all([
-          getAdminCategories(),
-          getAdminCategoryGroups(),
-        ]);
+        const [categoryData, groupData] = await Promise.all([getAdminCategories(), getAdminCategoryGroups()]);
         setCategories(categoryData);
         setGroups(groupData);
       } catch (err) {
-        setError(getApiErrorMessage(err, "Không thể tải dữ liệu danh mục."));
+        setError(getApiErrorMessage(err, "Khong the tai du lieu danh muc."));
       } finally {
         setLoading(false);
       }
@@ -82,12 +86,34 @@ export default function AdminCategoriesPage() {
   }, []);
 
   const groupMap = useMemo(() => new Map(groups.map((group) => [group.id, group.name])), [groups]);
-  const totalGroupPages = getTotalPages(groups.length, ADMIN_GROUPS_PER_PAGE);
+  const filteredGroups = useMemo(() => {
+    const keyword = groupFilterKeyword.trim().toLowerCase();
+    return groups.filter((group) => {
+      if (!keyword) {
+        return true;
+      }
+      return group.name.toLowerCase().includes(keyword) || (group.slug || "").toLowerCase().includes(keyword);
+    });
+  }, [groups, groupFilterKeyword]);
+
+  const filteredCategories = useMemo(() => {
+    const keyword = categoryFilters.keyword.trim().toLowerCase();
+    return categories.filter((category) => {
+      const matchKeyword =
+        !keyword ||
+        category.name.toLowerCase().includes(keyword) ||
+        (category.slug || "").toLowerCase().includes(keyword);
+      const matchGroup = !categoryFilters.groupId || String(category.groupId) === categoryFilters.groupId;
+      return matchKeyword && matchGroup;
+    });
+  }, [categories, categoryFilters]);
+
+  const totalGroupPages = getTotalPages(filteredGroups.length, ADMIN_GROUPS_PER_PAGE);
   const safeGroupPage = clampPage(groupPage, totalGroupPages);
-  const paginatedGroups = paginateItems(groups, safeGroupPage, ADMIN_GROUPS_PER_PAGE);
-  const totalCategoryPages = getTotalPages(categories.length, ADMIN_CATEGORIES_PER_PAGE);
+  const paginatedGroups = paginateItems(filteredGroups, safeGroupPage, ADMIN_GROUPS_PER_PAGE);
+  const totalCategoryPages = getTotalPages(filteredCategories.length, ADMIN_CATEGORIES_PER_PAGE);
   const safeCategoryPage = clampPage(categoryPage, totalCategoryPages);
-  const paginatedCategories = paginateItems(categories, safeCategoryPage, ADMIN_CATEGORIES_PER_PAGE);
+  const paginatedCategories = paginateItems(filteredCategories, safeCategoryPage, ADMIN_CATEGORIES_PER_PAGE);
 
   useEffect(() => {
     if (groupPage !== safeGroupPage) {
@@ -149,7 +175,7 @@ export default function AdminCategoriesPage() {
     event.preventDefault();
 
     if (!categoryForm.name.trim() || !categoryForm.groupId) {
-      setError("Vui lòng nhập tên danh mục và chọn nhóm.");
+      setError("Vui long nhap ten danh muc va chon nhom.");
       return;
     }
 
@@ -165,10 +191,7 @@ export default function AdminCategoriesPage() {
 
       if (editingCategoryId) {
         const updated = await updateAdminCategory(editingCategoryId, payload);
-        setCategories((current) =>
-          current.map((category) => (category.id === editingCategoryId ? updated : category))
-        );
-        resetCategoryForm();
+        setCategories((current) => current.map((category) => (category.id === editingCategoryId ? updated : category)));
       } else {
         const created = await createAdminCategory(payload);
         setCategories((current) => [created, ...current]);
@@ -176,7 +199,7 @@ export default function AdminCategoriesPage() {
       setIsCategoryFormModalOpen(false);
       resetCategoryForm();
     } catch (err) {
-      setError(getApiErrorMessage(err, "Không thể lưu danh mục."));
+      setError(getApiErrorMessage(err, "Khong the luu danh muc."));
     } finally {
       setSubmittingCategory(false);
     }
@@ -186,7 +209,7 @@ export default function AdminCategoriesPage() {
     event.preventDefault();
 
     if (!groupForm.name.trim()) {
-      setError("Vui lòng nhập tên nhóm danh mục.");
+      setError("Vui long nhap ten nhom danh muc.");
       return;
     }
 
@@ -202,10 +225,7 @@ export default function AdminCategoriesPage() {
 
       if (editingGroupId) {
         const updated = await updateAdminCategoryGroup(editingGroupId, payload);
-        setGroups((current) =>
-          current.map((group) => (group.id === editingGroupId ? updated : group))
-        );
-        resetGroupForm();
+        setGroups((current) => current.map((group) => (group.id === editingGroupId ? updated : group)));
       } else {
         const created = await createAdminCategoryGroup(payload);
         setGroups((current) => [created, ...current]);
@@ -213,7 +233,7 @@ export default function AdminCategoriesPage() {
       setIsGroupFormModalOpen(false);
       resetGroupForm();
     } catch (err) {
-      setError(getApiErrorMessage(err, "Không thể lưu nhóm danh mục."));
+      setError(getApiErrorMessage(err, "Khong the luu nhom danh muc."));
     } finally {
       setSubmittingGroup(false);
     }
@@ -229,7 +249,7 @@ export default function AdminCategoriesPage() {
         resetCategoryForm();
       }
     } catch (err) {
-      setError(getApiErrorMessage(err, "Không thể xóa danh mục."));
+      setError(getApiErrorMessage(err, "Khong the xoa danh muc."));
     } finally {
       setPendingDeleteKey(null);
     }
@@ -245,7 +265,7 @@ export default function AdminCategoriesPage() {
         resetGroupForm();
       }
     } catch (err) {
-      setError(getApiErrorMessage(err, "Không thể xóa nhóm danh mục."));
+      setError(getApiErrorMessage(err, "Khong the xoa nhom danh muc."));
     } finally {
       setPendingDeleteKey(null);
     }
@@ -256,37 +276,23 @@ export default function AdminCategoriesPage() {
       {error && <div className="alert alert-danger">{error}</div>}
 
       <div className="mb-3">
-        <label className="form-label">Tên nhóm</label>
-        <input
-          className="form-control"
-          value={groupForm.name}
-          onChange={(event) => setGroupForm((current) => ({ ...current, name: event.target.value }))}
-        />
+        <label className="form-label">Ten nhom</label>
+        <input className="form-control" value={groupForm.name} onChange={(event) => setGroupForm((current) => ({ ...current, name: event.target.value }))} />
       </div>
 
       <div className="mb-3">
         <label className="form-label">Slug</label>
-        <input
-          className="form-control"
-          value={groupForm.slug}
-          onChange={(event) => setGroupForm((current) => ({ ...current, slug: event.target.value }))}
-        />
+        <input className="form-control" value={groupForm.slug} onChange={(event) => setGroupForm((current) => ({ ...current, slug: event.target.value }))} />
       </div>
 
       <div className="mb-4">
-        <label className="form-label">Ảnh banner</label>
-        <input
-          className="form-control"
-          value={groupForm.bannerImage}
-          onChange={(event) =>
-            setGroupForm((current) => ({ ...current, bannerImage: event.target.value }))
-          }
-        />
+        <label className="form-label">Anh banner</label>
+        <input className="form-control" value={groupForm.bannerImage} onChange={(event) => setGroupForm((current) => ({ ...current, bannerImage: event.target.value }))} />
       </div>
 
       <div className="d-flex gap-2 flex-wrap">
         <button type="submit" className="btn btn-domora" disabled={submittingGroup}>
-          {submittingGroup ? "Đang lưu..." : editingGroupId ? "Cập nhật nhóm" : "Tạo nhóm"}
+          {submittingGroup ? "Dang luu..." : editingGroupId ? "Cap nhat nhom" : "Tao nhom"}
         </button>
         {editingGroupId && (
           <button
@@ -297,7 +303,7 @@ export default function AdminCategoriesPage() {
               resetGroupForm();
             }}
           >
-            Hủy sửa
+            Huy sua
           </button>
         )}
       </div>
@@ -309,37 +315,19 @@ export default function AdminCategoriesPage() {
       {error && <div className="alert alert-danger">{error}</div>}
 
       <div className="mb-3">
-        <label className="form-label">Tên danh mục</label>
-        <input
-          className="form-control"
-          value={categoryForm.name}
-          onChange={(event) =>
-            setCategoryForm((current) => ({ ...current, name: event.target.value }))
-          }
-        />
+        <label className="form-label">Ten danh muc</label>
+        <input className="form-control" value={categoryForm.name} onChange={(event) => setCategoryForm((current) => ({ ...current, name: event.target.value }))} />
       </div>
 
       <div className="mb-3">
         <label className="form-label">Slug</label>
-        <input
-          className="form-control"
-          value={categoryForm.slug}
-          onChange={(event) =>
-            setCategoryForm((current) => ({ ...current, slug: event.target.value }))
-          }
-        />
+        <input className="form-control" value={categoryForm.slug} onChange={(event) => setCategoryForm((current) => ({ ...current, slug: event.target.value }))} />
       </div>
 
       <div className="mb-4">
-        <label className="form-label">Nhóm danh mục</label>
-        <select
-          className="form-select"
-          value={categoryForm.groupId}
-          onChange={(event) =>
-            setCategoryForm((current) => ({ ...current, groupId: event.target.value }))
-          }
-        >
-          <option value="">Chọn nhóm danh mục</option>
+        <label className="form-label">Nhom danh muc</label>
+        <select className="form-select" value={categoryForm.groupId} onChange={(event) => setCategoryForm((current) => ({ ...current, groupId: event.target.value }))}>
+          <option value="">Chon nhom danh muc</option>
           {groups.map((group) => (
             <option key={group.id} value={group.id}>
               {group.name}
@@ -350,11 +338,7 @@ export default function AdminCategoriesPage() {
 
       <div className="d-flex gap-2 flex-wrap">
         <button type="submit" className="btn btn-domora" disabled={submittingCategory}>
-          {submittingCategory
-            ? "Đang lưu..."
-            : editingCategoryId
-              ? "Cập nhật danh mục"
-              : "Tạo danh mục"}
+          {submittingCategory ? "Dang luu..." : editingCategoryId ? "Cap nhat danh muc" : "Tao danh muc"}
         </button>
         {editingCategoryId && (
           <button
@@ -365,7 +349,7 @@ export default function AdminCategoriesPage() {
               resetCategoryForm();
             }}
           >
-            Hủy sửa
+            Huy sua
           </button>
         )}
       </div>
@@ -376,36 +360,51 @@ export default function AdminCategoriesPage() {
     <section className="admin-page">
       <div className="admin-page-header">
         <div>
-          <p className="admin-page-kicker">Danh mục</p>
-          <h1 className="admin-page-title">Quản lý danh mục</h1>
-          <p className="admin-page-desc">
-            Quản lý nhóm danh mục và danh mục sản phẩm để hệ thống admin và storefront đồng bộ.
-          </p>
+          <p className="admin-page-kicker">Danh muc</p>
+          <h1 className="admin-page-title">Quan ly danh muc</h1>
+          <p className="admin-page-desc">Quan ly nhom danh muc va danh muc con cho he thong.</p>
         </div>
       </div>
 
       {loading ? (
-        <div className="admin-empty-state">Đang tải dữ liệu danh mục...</div>
+        <div className="admin-empty-state">Dang tai du lieu danh muc...</div>
       ) : (
         <>
           <div className="admin-panel mb-4">
             <div className="admin-panel-head">
-              <h2>Nhóm danh mục</h2>
+              <h2>Nhom danh muc</h2>
               <div className="admin-panel-actions">
+                <button type="button" className="btn btn-domora-outline" onClick={() => setIsGroupFilterOpen((current) => !current)}>
+                  Loc
+                </button>
                 <button type="button" className="btn btn-domora" onClick={handleCreateGroupClick}>
-                  Thêm nhóm
+                  Them nhom
                 </button>
               </div>
             </div>
+
+            {isGroupFilterOpen && (
+              <div className="admin-filter-panel">
+                <input
+                  className="form-control"
+                  value={groupFilterKeyword}
+                  onChange={(event) => {
+                    setGroupFilterKeyword(event.target.value);
+                    setGroupPage(1);
+                  }}
+                  placeholder="Tim theo ten nhom, slug"
+                />
+              </div>
+            )}
 
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Tên nhóm</th>
+                    <th>Ten nhom</th>
                     <th>Slug</th>
                     <th>Banner</th>
-                    <th>Thao tác</th>
+                    <th>Thao tac</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -416,12 +415,8 @@ export default function AdminCategoriesPage() {
                       <td>{group.bannerImage || "-"}</td>
                       <td>
                         <div className="d-flex gap-2 flex-wrap">
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-domora-outline"
-                            onClick={() => handleEditGroup(group)}
-                          >
-                            Sửa
+                          <button type="button" className="btn btn-sm btn-domora-outline" onClick={() => handleEditGroup(group)}>
+                            Sua
                           </button>
                           <button
                             type="button"
@@ -429,51 +424,79 @@ export default function AdminCategoriesPage() {
                             disabled={pendingDeleteKey === `group-${group.id}`}
                             onClick={() => handleDeleteGroup(group.id)}
                           >
-                            {pendingDeleteKey === `group-${group.id}` ? "Đang xóa..." : "Xóa"}
+                            {pendingDeleteKey === `group-${group.id}` ? "Dang xoa..." : "Xoa"}
                           </button>
                         </div>
                       </td>
                     </tr>
                   ))}
-                  {groups.length === 0 && (
+                  {filteredGroups.length === 0 && (
                     <tr>
                       <td colSpan={4} className="text-center">
-                        Chưa có nhóm danh mục.
+                        Khong co nhom danh muc phu hop.
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
-            <Pagination
-              currentPage={safeGroupPage}
-              totalPages={totalGroupPages}
-              onPageChange={setGroupPage}
-            />
+            <Pagination currentPage={safeGroupPage} totalPages={totalGroupPages} onPageChange={setGroupPage} />
           </div>
 
           <div className="admin-panel">
             <div className="admin-panel-head">
-              <h2>Danh mục con</h2>
+              <h2>Danh muc con</h2>
               <div className="admin-panel-actions">
-                <button
-                  type="button"
-                  className="btn btn-domora"
-                  onClick={handleCreateCategoryClick}
-                >
-                  Thêm danh mục
+                <button type="button" className="btn btn-domora-outline" onClick={() => setIsCategoryFilterOpen((current) => !current)}>
+                  Loc
+                </button>
+                <button type="button" className="btn btn-domora" onClick={handleCreateCategoryClick}>
+                  Them danh muc
                 </button>
               </div>
             </div>
+
+            {isCategoryFilterOpen && (
+              <div className="admin-filter-panel">
+                <input
+                  className="form-control"
+                  name="keyword"
+                  value={categoryFilters.keyword}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setCategoryFilters((current) => ({ ...current, keyword: value }));
+                    setCategoryPage(1);
+                  }}
+                  placeholder="Tim theo ten danh muc, slug"
+                />
+                <select
+                  className="form-select"
+                  name="groupId"
+                  value={categoryFilters.groupId}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setCategoryFilters((current) => ({ ...current, groupId: value }));
+                    setCategoryPage(1);
+                  }}
+                >
+                  <option value="">Tat ca nhom</option>
+                  {groups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Tên danh mục</th>
+                    <th>Ten danh muc</th>
                     <th>Slug</th>
-                    <th>Nhóm</th>
-                    <th>Thao tác</th>
+                    <th>Nhom</th>
+                    <th>Thao tac</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -481,18 +504,11 @@ export default function AdminCategoriesPage() {
                     <tr key={category.id}>
                       <td>{category.name}</td>
                       <td>{category.slug || "-"}</td>
-                      <td>
-                        {category.groupName ||
-                          (category.groupId ? groupMap.get(category.groupId) : "-")}
-                      </td>
+                      <td>{category.groupName || (category.groupId ? groupMap.get(category.groupId) : "-")}</td>
                       <td>
                         <div className="d-flex gap-2 flex-wrap">
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-domora-outline"
-                            onClick={() => handleEditCategory(category)}
-                          >
-                            Sửa
+                          <button type="button" className="btn btn-sm btn-domora-outline" onClick={() => handleEditCategory(category)}>
+                            Sua
                           </button>
                           <button
                             type="button"
@@ -500,33 +516,29 @@ export default function AdminCategoriesPage() {
                             disabled={pendingDeleteKey === `category-${category.id}`}
                             onClick={() => handleDeleteCategory(category.id)}
                           >
-                            {pendingDeleteKey === `category-${category.id}` ? "Đang xóa..." : "Xóa"}
+                            {pendingDeleteKey === `category-${category.id}` ? "Dang xoa..." : "Xoa"}
                           </button>
                         </div>
                       </td>
                     </tr>
                   ))}
-                  {categories.length === 0 && (
+                  {filteredCategories.length === 0 && (
                     <tr>
                       <td colSpan={4} className="text-center">
-                        Chưa có danh mục nào.
+                        Khong co danh muc phu hop.
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
-            <Pagination
-              currentPage={safeCategoryPage}
-              totalPages={totalCategoryPages}
-              onPageChange={setCategoryPage}
-            />
+            <Pagination currentPage={safeCategoryPage} totalPages={totalCategoryPages} onPageChange={setCategoryPage} />
           </div>
         </>
       )}
 
       <AdminFormModal
-        title={editingGroupId ? "Cập nhật nhóm danh mục" : "Thêm nhóm danh mục"}
+        title={editingGroupId ? "Cap nhat nhom danh muc" : "Them nhom danh muc"}
         open={isGroupFormModalOpen}
         onClose={() => {
           setIsGroupFormModalOpen(false);
@@ -537,7 +549,7 @@ export default function AdminCategoriesPage() {
       </AdminFormModal>
 
       <AdminFormModal
-        title={editingCategoryId ? "Cập nhật danh mục" : "Thêm danh mục"}
+        title={editingCategoryId ? "Cap nhat danh muc" : "Them danh muc"}
         open={isCategoryFormModalOpen}
         onClose={() => {
           setIsCategoryFormModalOpen(false);

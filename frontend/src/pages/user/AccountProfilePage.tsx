@@ -6,8 +6,10 @@ import {
   updateCurrentUserProfile,
   uploadCurrentUserAvatar,
 } from "../../api/authApi";
+import { getMyAffiliateInfo, getMyAffiliateReferrals } from "../../api/affiliateApi";
 import { useAuth } from "../../hooks/useAuth";
 import type { UserProfile } from "../../types/auth";
+import type { UserAffiliateInfo, UserReferralItem } from "../../types/affiliate";
 
 const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
 const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -49,6 +51,11 @@ export default function AccountProfilePage() {
   const [avatarError, setAvatarError] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [affiliateInfo, setAffiliateInfo] = useState<UserAffiliateInfo | null>(null);
+  const [affiliateReferrals, setAffiliateReferrals] = useState<UserReferralItem[]>([]);
+  const [affiliateError, setAffiliateError] = useState("");
+  const [affiliateMessage, setAffiliateMessage] = useState("");
+  const [isLoadingAffiliate, setIsLoadingAffiliate] = useState(true);
 
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -69,6 +76,24 @@ export default function AccountProfilePage() {
     },
     []
   );
+
+  useEffect(() => {
+    const loadAffiliateData = async () => {
+      try {
+        setIsLoadingAffiliate(true);
+        setAffiliateError("");
+        const [info, referrals] = await Promise.all([getMyAffiliateInfo(), getMyAffiliateReferrals()]);
+        setAffiliateInfo(info);
+        setAffiliateReferrals(referrals);
+      } catch (error) {
+        setAffiliateError(getApiErrorMessage(error, "Khong the tai thong tin affiliate."));
+      } finally {
+        setIsLoadingAffiliate(false);
+      }
+    };
+
+    void loadAffiliateData();
+  }, []);
 
   const isLocalAccount = (auth?.authProvider || "LOCAL").toUpperCase() === "LOCAL";
   const currentAvatar = resolveAvatarUrl(auth?.avatarUrl);
@@ -234,6 +259,27 @@ export default function AccountProfilePage() {
     }
   };
 
+  const handleCopyText = async (value: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setAffiliateMessage(`Da copy ${label}.`);
+      setAffiliateError("");
+    } catch {
+      setAffiliateError(`Khong the copy ${label}.`);
+    }
+  };
+
+  const formatDateTime = (value?: string | null) => {
+    if (!value) {
+      return "";
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+    return date.toLocaleString("vi-VN");
+  };
+
   return (
     <section className="info-page">
       <div className="account-hero">
@@ -309,6 +355,79 @@ export default function AccountProfilePage() {
           </article>
 
           <div className="account-profile-side">
+            <article className="info-card info-card-large account-profile-card">
+              <div className="account-section-heading account-section-heading-tight">
+                <div>
+                  <p className="account-section-kicker">Affiliate</p>
+                  <h2>Gioi thieu ban be</h2>
+                </div>
+              </div>
+
+              {isLoadingAffiliate ? (
+                <div className="account-security-note">Dang tai thong tin affiliate...</div>
+              ) : affiliateError ? (
+                <div className="account-feedback error">{affiliateError}</div>
+              ) : affiliateInfo ? (
+                <div className="affiliate-block">
+                  {affiliateMessage && <div className="account-feedback success">{affiliateMessage}</div>}
+                  <div className="affiliate-item">
+                    <span className="account-grid-label">Ma gioi thieu</span>
+                    <div className="affiliate-copy-row">
+                      <code>{affiliateInfo.referralCode}</code>
+                      <button
+                        type="button"
+                        className="btn btn-domora-outline btn-sm"
+                        onClick={() => handleCopyText(affiliateInfo.referralCode, "ma gioi thieu")}
+                      >
+                        Copy ma
+                      </button>
+                    </div>
+                  </div>
+                  <div className="affiliate-item">
+                    <span className="account-grid-label">Link gioi thieu</span>
+                    <div className="affiliate-copy-row">
+                      <input className="form-control" value={affiliateInfo.referralLink} readOnly />
+                      <button
+                        type="button"
+                        className="btn btn-domora-outline btn-sm"
+                        onClick={() => handleCopyText(affiliateInfo.referralLink, "link gioi thieu")}
+                      >
+                        Copy link
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="affiliate-stats">
+                    <div>
+                      <strong>{affiliateInfo.totalSuccessfulReferrals}</strong>
+                      <p>Luot gioi thieu thanh cong</p>
+                    </div>
+                    <div>
+                      <strong>{affiliateInfo.totalRewardsReceived}</strong>
+                      <p>Tong reward da nhan</p>
+                    </div>
+                  </div>
+
+                  <div className="affiliate-history">
+                    <h3>Lich su gioi thieu</h3>
+                    {affiliateReferrals.length === 0 ? (
+                      <p>Chua co nguoi duoc gioi thieu thanh cong.</p>
+                    ) : (
+                      <ul>
+                        {affiliateReferrals.slice(0, 5).map((referral) => (
+                          <li key={referral.referralId}>
+                            <span>{referral.referredLoginName}</span>
+                            <span>{referral.status}</span>
+                            <span>{formatDateTime(referral.createdAt)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+            </article>
+
             <article className="info-card info-card-large account-profile-card">
               <div className="account-section-heading account-section-heading-tight">
                 <div>

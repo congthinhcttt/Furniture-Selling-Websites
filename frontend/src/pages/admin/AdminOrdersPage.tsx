@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, useEffect, useMemo, useState } from "react";
 import {
   getAdminDelivery,
   updateAdminDeliveryStatus,
@@ -26,11 +26,11 @@ const STATUS_OPTIONS = [
 const SHIPPING_PROVIDERS = ["GHN", "GHTK", "Viettel Post", "J&T Express", "Ninja Van"];
 
 function formatPrice(price: number) {
-  return `${price.toLocaleString("vi-VN")} đ`;
+  return `${price.toLocaleString("vi-VN")} d`;
 }
 
 function formatDate(value?: string) {
-  return value ? new Date(value).toLocaleString("vi-VN") : "Đang cập nhật";
+  return value ? new Date(value).toLocaleString("vi-VN") : "Dang cap nhat";
 }
 
 function toDateTimeLocalValue(value?: string) {
@@ -52,12 +52,10 @@ function toIsoDateTime(value: string) {
   if (!value.trim()) {
     return undefined;
   }
-
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    throw new Error("Thời điểm không hợp lệ.");
+    throw new Error("Thoi diem khong hop le.");
   }
-
   return date.toISOString();
 }
 
@@ -71,6 +69,12 @@ export default function AdminOrdersPage() {
   const [detailError, setDetailError] = useState("");
   const [pendingAction, setPendingAction] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    keyword: "",
+    status: "",
+    paymentStatus: "",
+  });
   const [shippingForm, setShippingForm] = useState({
     shippingProvider: "",
     trackingCode: "",
@@ -116,7 +120,7 @@ export default function AdminOrdersPage() {
       setDeliveryDetail(detail);
       hydrateForms(detail);
     } catch (err) {
-      setDetailError(getApiErrorMessage(err, "Không thể tải chi tiết vận chuyển."));
+      setDetailError(getApiErrorMessage(err, "Khong the tai chi tiet van chuyen."));
     } finally {
       setLoadingDetail(false);
     }
@@ -129,7 +133,7 @@ export default function AdminOrdersPage() {
         setError("");
         await loadOrders();
       } catch (err) {
-        setError(getApiErrorMessage(err, "Không thể tải danh sách đơn hàng quản trị."));
+        setError(getApiErrorMessage(err, "Khong the tai danh sach don hang quan tri."));
       } finally {
         setLoading(false);
       }
@@ -138,9 +142,24 @@ export default function AdminOrdersPage() {
     void fetchOrders();
   }, []);
 
-  const totalPages = getTotalPages(orders.length, ADMIN_ORDERS_PER_PAGE);
+  const filteredOrders = useMemo(() => {
+    const keyword = filters.keyword.trim().toLowerCase();
+    return orders.filter((order) => {
+      const matchesKeyword =
+        !keyword ||
+        (order.orderCode || "").toLowerCase().includes(keyword) ||
+        order.receiverName.toLowerCase().includes(keyword) ||
+        order.receiverPhone.toLowerCase().includes(keyword);
+      const currentStatus = order.deliveryStatus || order.status;
+      const matchesStatus = !filters.status || currentStatus === filters.status;
+      const matchesPayment = !filters.paymentStatus || order.paymentStatus === filters.paymentStatus;
+      return matchesKeyword && matchesStatus && matchesPayment;
+    });
+  }, [orders, filters]);
+
+  const totalPages = getTotalPages(filteredOrders.length, ADMIN_ORDERS_PER_PAGE);
   const safePage = clampPage(currentPage, totalPages);
-  const paginatedOrders = paginateItems(orders, safePage, ADMIN_ORDERS_PER_PAGE);
+  const paginatedOrders = paginateItems(filteredOrders, safePage, ADMIN_ORDERS_PER_PAGE);
 
   useEffect(() => {
     if (currentPage !== safePage) {
@@ -164,7 +183,7 @@ export default function AdminOrdersPage() {
       await action();
       await Promise.all([loadOrders(), loadDeliveryDetail(selectedOrderId)]);
     } catch (err) {
-      setDetailError(getApiErrorMessage(err, "Không thể cập nhật thông tin vận chuyển."));
+      setDetailError(getApiErrorMessage(err, "Khong the cap nhat thong tin van chuyen."));
     } finally {
       setPendingAction("");
     }
@@ -175,41 +194,78 @@ export default function AdminOrdersPage() {
     await loadDeliveryDetail(orderId);
   };
 
+  const handleFilterChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = event.target;
+    setFilters((current) => ({ ...current, [name]: value }));
+    setCurrentPage(1);
+  };
+
   return (
     <section className="admin-page">
       <div className="admin-page-header">
         <div>
-          <p className="admin-page-kicker">Vận hành vận chuyển</p>
-          <h1 className="admin-page-title">Quản lý vận chuyển đơn hàng</h1>
-          <p className="admin-page-desc">
-            Cập nhật đơn vị vận chuyển, mã vận đơn, liên kết tra cứu và trạng thái giao hàng theo mô hình shop bán nội thất.
-          </p>
+          <p className="admin-page-kicker">Van hanh van chuyen</p>
+          <h1 className="admin-page-title">Quan ly van chuyen don hang</h1>
+          <p className="admin-page-desc">Cap nhat trang thai giao hang, ma van don va thong tin tracking.</p>
         </div>
       </div>
 
       <div className="admin-panel">
         <div className="admin-panel-head">
-          <h2>Danh sách đơn hàng</h2>
+          <h2>Danh sach don hang</h2>
+          <div className="admin-panel-actions">
+            <button type="button" className="btn btn-domora-outline" onClick={() => setIsFilterOpen((current) => !current)}>
+              Loc
+            </button>
+          </div>
         </div>
 
+        {isFilterOpen && (
+          <div className="admin-filter-panel">
+            <input
+              className="form-control"
+              name="keyword"
+              value={filters.keyword}
+              onChange={handleFilterChange}
+              placeholder="Tim ma don, ten nguoi nhan, SDT"
+            />
+            <select className="form-select" name="status" value={filters.status} onChange={handleFilterChange}>
+              <option value="">Tat ca trang thai giao hang</option>
+              {STATUS_OPTIONS.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+            <select className="form-select" name="paymentStatus" value={filters.paymentStatus} onChange={handleFilterChange}>
+              <option value="">Tat ca thanh toan</option>
+              {["PENDING", "PAID", "FAILED", "REFUNDED", "CANCELLED"].map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {loading ? (
-          <div className="admin-empty-state">Đang tải đơn hàng...</div>
+          <div className="admin-empty-state">Dang tai don hang...</div>
         ) : error ? (
           <div className="admin-empty-state">{error}</div>
-        ) : orders.length === 0 ? (
-          <div className="admin-empty-state">Chưa có đơn hàng nào.</div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="admin-empty-state">Khong co don hang phu hop.</div>
         ) : (
           <>
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Đơn</th>
-                    <th>Người nhận</th>
-                    <th>Thanh toán</th>
-                    <th>Tổng tiền</th>
-                    <th>Vận chuyển</th>
-                    <th>Sản phẩm</th>
+                    <th>Don</th>
+                    <th>Nguoi nhan</th>
+                    <th>Thanh toan</th>
+                    <th>Tong tien</th>
+                    <th>Van chuyen</th>
+                    <th>San pham</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -231,14 +287,14 @@ export default function AdminOrdersPage() {
                       <td>{formatPrice(order.totalAmount)}</td>
                       <td>
                         <strong>{order.deliveryStatusLabel || order.deliveryStatus || order.status}</strong>
-                        <div className="admin-table-subtext">{order.shippingProvider || "Chưa có đơn vị vận chuyển"}</div>
-                        <div className="admin-table-subtext">{order.trackingCode || "Chưa có mã vận đơn"}</div>
+                        <div className="admin-table-subtext">{order.shippingProvider || "Chua co don vi van chuyen"}</div>
+                        <div className="admin-table-subtext">{order.trackingCode || "Chua co ma van don"}</div>
                         <button
                           type="button"
                           className="btn btn-sm btn-outline-dark mt-2"
                           onClick={() => void handleSelectOrder(order.id)}
                         >
-                          {selectedOrderId === order.id ? "Đang chỉnh sửa" : "Cập nhật vận chuyển"}
+                          {selectedOrderId === order.id ? "Dang chinh sua" : "Cap nhat van chuyen"}
                         </button>
                       </td>
                       <td>
@@ -264,46 +320,46 @@ export default function AdminOrdersPage() {
         <div className="admin-panel admin-delivery-ops">
           <div className="admin-panel-head">
             <div>
-              <h2>Cập nhật vận chuyển cho {selectedOrder.orderCode || `#${selectedOrder.id}`}</h2>
+              <h2>Cap nhat van chuyen cho {selectedOrder.orderCode || `#${selectedOrder.id}`}</h2>
               <p className="admin-page-desc">
-                Trạng thái hiện tại: <strong>{deliveryDetail?.statusLabel || deliveryDetail?.shippingStatus || "Đang tải"}</strong>
+                Trang thai hien tai: <strong>{deliveryDetail?.statusLabel || deliveryDetail?.shippingStatus || "Dang tai"}</strong>
               </p>
             </div>
           </div>
 
           {loadingDetail ? (
-            <div className="admin-empty-state">Đang tải chi tiết vận chuyển...</div>
+            <div className="admin-empty-state">Dang tai chi tiet van chuyen...</div>
           ) : detailError ? (
             <div className="admin-empty-state">{detailError}</div>
           ) : deliveryDetail ? (
             <>
               <div className="admin-delivery-summary">
                 <div>
-                  <span>Đơn vị vận chuyển</span>
-                  <strong>{deliveryDetail.shippingProvider || "Chưa có"}</strong>
+                  <span>Don vi van chuyen</span>
+                  <strong>{deliveryDetail.shippingProvider || "Chua co"}</strong>
                 </div>
                 <div>
-                  <span>Mã vận đơn</span>
-                  <strong>{deliveryDetail.trackingCode || "Chưa có"}</strong>
+                  <span>Ma van don</span>
+                  <strong>{deliveryDetail.trackingCode || "Chua co"}</strong>
                 </div>
                 <div>
-                  <span>Đã gửi hàng</span>
+                  <span>Da gui hang</span>
                   <strong>{formatDate(deliveryDetail.shippedAt)}</strong>
                 </div>
                 <div>
-                  <span>Đã giao</span>
+                  <span>Da giao</span>
                   <strong>{formatDate(deliveryDetail.deliveredAt)}</strong>
                 </div>
               </div>
 
               <div className="admin-delivery-grid">
                 <article className="admin-delivery-card">
-                  <h3>Thông tin vận chuyển</h3>
+                  <h3>Thong tin van chuyen</h3>
                   <div className="admin-form-grid">
                     <input
                       list="shipping-provider-options"
                       className="form-control"
-                      placeholder="Đơn vị vận chuyển"
+                      placeholder="Don vi van chuyen"
                       value={shippingForm.shippingProvider}
                       onChange={(event) =>
                         setShippingForm((current) => ({ ...current, shippingProvider: event.target.value }))
@@ -316,7 +372,7 @@ export default function AdminOrdersPage() {
                     </datalist>
                     <input
                       className="form-control"
-                      placeholder="Mã vận đơn"
+                      placeholder="Ma van don"
                       value={shippingForm.trackingCode}
                       onChange={(event) =>
                         setShippingForm((current) => ({ ...current, trackingCode: event.target.value }))
@@ -324,7 +380,7 @@ export default function AdminOrdersPage() {
                     />
                     <input
                       className="form-control"
-                      placeholder="Liên kết tra cứu"
+                      placeholder="Lien ket tra cuu"
                       value={shippingForm.trackingUrl}
                       onChange={(event) =>
                         setShippingForm((current) => ({ ...current, trackingUrl: event.target.value }))
@@ -341,7 +397,7 @@ export default function AdminOrdersPage() {
                     <textarea
                       className="form-control"
                       rows={3}
-                      placeholder="Ghi chú vận chuyển"
+                      placeholder="Ghi chu van chuyen"
                       value={shippingForm.shippingNote}
                       onChange={(event) =>
                         setShippingForm((current) => ({ ...current, shippingNote: event.target.value }))
@@ -363,13 +419,13 @@ export default function AdminOrdersPage() {
                         )
                       }
                     >
-                      Lưu thông tin vận chuyển
+                      Luu thong tin van chuyen
                     </button>
                   </div>
                 </article>
 
                 <article className={`admin-delivery-card ${statusForm.status === "FAILED" ? "admin-delivery-card--warning" : ""}`}>
-                  <h3>Trạng thái giao hàng</h3>
+                  <h3>Trang thai giao hang</h3>
                   <div className="admin-form-grid">
                     <select
                       className="form-select"
@@ -402,7 +458,7 @@ export default function AdminOrdersPage() {
                       <textarea
                         className="form-control"
                         rows={3}
-                        placeholder="Lý do giao thất bại"
+                        placeholder="Ly do giao that bai"
                         value={statusForm.failReason}
                         onChange={(event) =>
                           setStatusForm((current) => ({ ...current, failReason: event.target.value }))
@@ -412,7 +468,7 @@ export default function AdminOrdersPage() {
                     <textarea
                       className="form-control"
                       rows={3}
-                      placeholder="Ghi chú cập nhật"
+                      placeholder="Ghi chu cap nhat"
                       value={statusForm.shippingNote}
                       onChange={(event) =>
                         setStatusForm((current) => ({ ...current, shippingNote: event.target.value }))
@@ -434,7 +490,7 @@ export default function AdminOrdersPage() {
                         )
                       }
                     >
-                      Lưu trạng thái
+                      Luu trang thai
                     </button>
                   </div>
                 </article>

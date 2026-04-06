@@ -1,11 +1,13 @@
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from "react";
 import { getApiErrorMessage } from "../../api/authApi";
 import {
   createAdminProduct,
   deleteAdminProduct,
   getAdminProducts,
   restockAdminProduct,
+  restockAdminProductsBulk,
   type AdminProductPayload,
+  type ProductBulkRestockItemPayload,
   updateAdminProduct,
 } from "../../api/adminProductApi";
 import { getCategories } from "../../api/categoryApi";
@@ -32,6 +34,18 @@ interface RestockFormState {
   quantity: string;
 }
 
+interface BulkRestockRow {
+  rowId: string;
+  productId: string;
+  quantity: string;
+}
+
+interface ProductFilterState {
+  keyword: string;
+  categoryId: string;
+  stockStatus: "ALL" | "IN_STOCK" | "LOW_STOCK" | "OUT_OF_STOCK";
+}
+
 const emptyProductForm: ProductFormState = {
   name: "",
   description: "",
@@ -49,10 +63,16 @@ const emptyRestockForm: RestockFormState = {
   quantity: "",
 };
 
+const emptyFilter: ProductFilterState = {
+  keyword: "",
+  categoryId: "",
+  stockStatus: "ALL",
+};
+
 const ADMIN_PRODUCTS_PER_PAGE = 8;
 
 function formatPrice(price: number) {
-  return `${price.toLocaleString("vi-VN")} đ`;
+  return `${price.toLocaleString("vi-VN")} d`;
 }
 
 function formatDimensions(product: Product) {
@@ -73,35 +93,45 @@ function mapProductToForm(product: Product): ProductFormState {
   };
 }
 
+function createEmptyBulkRow(seed: string) {
+  return { rowId: `row-${seed}`, productId: "", quantity: "" };
+}
+
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState<ProductFormState>(emptyProductForm);
   const [restockForm, setRestockForm] = useState<RestockFormState>(emptyRestockForm);
+  const [bulkRows, setBulkRows] = useState<BulkRestockRow[]>([
+    createEmptyBulkRow("1"),
+    createEmptyBulkRow("2"),
+  ]);
+  const [filters, setFilters] = useState<ProductFilterState>(emptyFilter);
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [restockSubmitting, setRestockSubmitting] = useState(false);
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [restockError, setRestockError] = useState("");
+  const [bulkError, setBulkError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
+  const [isBulkRestockModalOpen, setIsBulkRestockModalOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError("");
-        const [productData, categoryData] = await Promise.all([
-          getAdminProducts(),
-          getCategories(),
-        ]);
+        const [productData, categoryData] = await Promise.all([getAdminProducts(), getCategories()]);
         setProducts(productData);
         setCategories(categoryData);
       } catch (err) {
-        setError(getApiErrorMessage(err, "Không thể tải dữ liệu sản phẩm."));
+        setError(getApiErrorMessage(err, "Khong the tai du lieu san pham."));
       } finally {
         setLoading(false);
       }
@@ -114,11 +144,30 @@ export default function AdminProductsPage() {
     () => new Map(categories.map((category) => [category.id, category.name])),
     [categories]
   );
-  const totalPages = getTotalPages(products.length, ADMIN_PRODUCTS_PER_PAGE);
+
+  const filteredProducts = useMemo(() => {
+    const keyword = filters.keyword.trim().toLowerCase();
+    return products.filter((product) => {
+      const matchKeyword =
+        !keyword ||
+        product.name.toLowerCase().includes(keyword) ||
+        (product.description || "").toLowerCase().includes(keyword);
+      const matchCategory = !filters.categoryId || String(product.categoryId) === filters.categoryId;
+      const matchStock =
+        filters.stockStatus === "ALL" ||
+        (filters.stockStatus === "IN_STOCK" && product.stockQuantity > 5) ||
+        (filters.stockStatus === "LOW_STOCK" && product.stockQuantity > 0 && product.stockQuantity <= 5) ||
+        (filters.stockStatus === "OUT_OF_STOCK" && product.stockQuantity === 0);
+
+      return matchKeyword && matchCategory && matchStock;
+    });
+  }, [products, filters]);
+
+  const totalPages = getTotalPages(filteredProducts.length, ADMIN_PRODUCTS_PER_PAGE);
   const safePage = clampPage(currentPage, totalPages);
   const paginatedProducts = useMemo(
-    () => paginateItems(products, safePage, ADMIN_PRODUCTS_PER_PAGE),
-    [products, safePage]
+    () => paginateItems(filteredProducts, safePage, ADMIN_PRODUCTS_PER_PAGE),
+    [filteredProducts, safePage]
   );
 
   useEffect(() => {
@@ -144,18 +193,28 @@ export default function AdminProductsPage() {
     setRestockError("");
   };
 
+  const closeBulkRestockModal = () => {
+    setIsBulkRestockModalOpen(false);
+    setBulkRows([createEmptyBulkRow("1"), createEmptyBulkRow("2")]);
+    setBulkError("");
+  };
+
   const handleProductInputChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
   };
 
-  const handleRestockInputChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const handleRestockInputChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = event.target;
     setRestockForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleFilterInputChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = event.target;
+    setFilters((current) => ({ ...current, [name]: value }));
+    setCurrentPage(1);
   };
 
   const handleCreateClick = () => {
@@ -171,12 +230,27 @@ export default function AdminProductsPage() {
   };
 
   const handleOpenRestock = (product?: Product) => {
-    setRestockForm({
-      productId: product ? String(product.id) : "",
-      quantity: "",
-    });
+    setRestockForm({ productId: product ? String(product.id) : "", quantity: "" });
     setRestockError("");
     setIsRestockModalOpen(true);
+  };
+
+  const handleOpenBulkRestock = () => {
+    setBulkRows([createEmptyBulkRow(String(Date.now())), createEmptyBulkRow(String(Date.now() + 1))]);
+    setBulkError("");
+    setIsBulkRestockModalOpen(true);
+  };
+
+  const handleBulkRowChange = (rowId: string, field: "productId" | "quantity", value: string) => {
+    setBulkRows((current) => current.map((row) => (row.rowId === rowId ? { ...row, [field]: value } : row)));
+  };
+
+  const handleAddBulkRow = () => {
+    setBulkRows((current) => [...current, createEmptyBulkRow(`${Date.now()}-${current.length}`)]);
+  };
+
+  const handleRemoveBulkRow = (rowId: string) => {
+    setBulkRows((current) => (current.length <= 1 ? current : current.filter((row) => row.rowId !== rowId)));
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -190,7 +264,7 @@ export default function AdminProductsPage() {
       !form.length.trim() ||
       !form.stockQuantity.trim()
     ) {
-      setError("Vui lòng nhập đầy đủ tên, giá, danh mục, kích thước và tồn kho.");
+      setError("Vui long nhap day du thong tin bat buoc.");
       return;
     }
 
@@ -213,7 +287,7 @@ export default function AdminProductsPage() {
       !Number.isFinite(payload.stockQuantity) ||
       !Number.isFinite(payload.categoryId)
     ) {
-      setError("Dữ liệu sản phẩm không hợp lệ.");
+      setError("Du lieu san pham khong hop le.");
       return;
     }
 
@@ -233,7 +307,7 @@ export default function AdminProductsPage() {
 
       closeProductModal();
     } catch (err) {
-      setError(getApiErrorMessage(err, "Không thể lưu sản phẩm."));
+      setError(getApiErrorMessage(err, "Khong the luu san pham."));
     } finally {
       setSubmitting(false);
     }
@@ -246,12 +320,12 @@ export default function AdminProductsPage() {
     const quantity = Number(restockForm.quantity);
 
     if (!product) {
-      setRestockError("Vui lòng chọn sản phẩm cần nhập hàng.");
+      setRestockError("Vui long chon san pham can nhap hang.");
       return;
     }
 
     if (!restockForm.quantity.trim() || !Number.isFinite(quantity) || quantity < 1) {
-      setRestockError("Số lượng nhập phải lớn hơn hoặc bằng 1.");
+      setRestockError("So luong nhap phai lon hon hoac bang 1.");
       return;
     }
 
@@ -259,14 +333,40 @@ export default function AdminProductsPage() {
       setRestockSubmitting(true);
       setRestockError("");
       const updatedProduct = await restockAdminProduct(product.id, { quantity });
-      setProducts((current) =>
-        current.map((item) => (item.id === updatedProduct.id ? updatedProduct : item))
-      );
+      setProducts((current) => current.map((item) => (item.id === updatedProduct.id ? updatedProduct : item)));
       closeRestockModal();
     } catch (err) {
-      setRestockError(getApiErrorMessage(err, "Không thể nhập thêm hàng."));
+      setRestockError(getApiErrorMessage(err, "Khong the nhap them hang."));
     } finally {
       setRestockSubmitting(false);
+    }
+  };
+
+  const handleBulkRestockSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const items: ProductBulkRestockItemPayload[] = [];
+    for (const row of bulkRows) {
+      const productId = Number(row.productId);
+      const quantity = Number(row.quantity);
+      if (!row.productId || !row.quantity.trim() || !Number.isFinite(productId) || !Number.isFinite(quantity) || quantity < 1) {
+        setBulkError("Moi dong can co san pham va so luong >= 1.");
+        return;
+      }
+      items.push({ productId, quantity });
+    }
+
+    try {
+      setBulkSubmitting(true);
+      setBulkError("");
+      const updatedProducts = await restockAdminProductsBulk({ items });
+      const updatedMap = new Map(updatedProducts.map((item) => [item.id, item]));
+      setProducts((current) => current.map((item) => updatedMap.get(item.id) || item));
+      closeBulkRestockModal();
+    } catch (err) {
+      setBulkError(getApiErrorMessage(err, "Khong the nhap hang hang loat."));
+    } finally {
+      setBulkSubmitting(false);
     }
   };
 
@@ -280,60 +380,89 @@ export default function AdminProductsPage() {
         resetProductForm();
       }
     } catch (err) {
-      setError(getApiErrorMessage(err, "Không thể xóa sản phẩm."));
+      setError(getApiErrorMessage(err, "Khong the xoa san pham."));
     } finally {
       setPendingDeleteId(null);
     }
   };
 
-  const selectedRestockProduct =
-    products.find((product) => String(product.id) === restockForm.productId) || null;
+  const selectedRestockProduct = products.find((product) => String(product.id) === restockForm.productId) || null;
 
   return (
     <section className="admin-page">
       <div className="admin-page-header">
         <div>
-          <p className="admin-page-kicker">Sản phẩm</p>
-          <h1 className="admin-page-title">Quản lý sản phẩm</h1>
-          <p className="admin-page-desc">
-            Quản lý màu sắc, kích thước, tồn kho và thông tin bán hàng của sản phẩm.
-          </p>
+          <p className="admin-page-kicker">San pham</p>
+          <h1 className="admin-page-title">Quan ly san pham</h1>
+          <p className="admin-page-desc">Quan ly ton kho, thong tin ban hang va nhap hang nhanh.</p>
         </div>
       </div>
 
       <div className="admin-panel">
         <div className="admin-panel-head">
-          <h2>Danh sách sản phẩm</h2>
+          <h2>Danh sach san pham</h2>
           <div className="admin-panel-actions">
+            <button type="button" className="btn btn-domora-outline" onClick={() => setIsFilterOpen((current) => !current)}>
+              Loc
+            </button>
             <button type="button" className="btn btn-domora-outline" onClick={() => handleOpenRestock()}>
-              Nhập hàng
+              Nhap hang
+            </button>
+            <button type="button" className="btn btn-domora-outline" onClick={handleOpenBulkRestock}>
+              Nhap hang hang loat
             </button>
             <button type="button" className="btn btn-domora" onClick={handleCreateClick}>
-              Thêm sản phẩm
+              Them san pham
             </button>
           </div>
         </div>
 
+        {isFilterOpen && (
+          <div className="admin-filter-panel">
+            <input
+              className="form-control"
+              name="keyword"
+              value={filters.keyword}
+              onChange={handleFilterInputChange}
+              placeholder="Tim theo ten, mo ta"
+            />
+            <select className="form-select" name="categoryId" value={filters.categoryId} onChange={handleFilterInputChange}>
+              <option value="">Tat ca danh muc</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+            <select className="form-select" name="stockStatus" value={filters.stockStatus} onChange={handleFilterInputChange}>
+              <option value="ALL">Tat ca ton kho</option>
+              <option value="IN_STOCK">Con hang (&gt;5)</option>
+              <option value="LOW_STOCK">Sap het (1-5)</option>
+              <option value="OUT_OF_STOCK">Het hang (0)</option>
+            </select>
+          </div>
+        )}
+
         {error && !isFormModalOpen && <div className="alert alert-danger mb-3">{error}</div>}
 
         {loading ? (
-          <div className="admin-empty-state">Đang tải sản phẩm...</div>
-        ) : products.length === 0 ? (
-          <div className="admin-empty-state">Chưa có sản phẩm nào.</div>
+          <div className="admin-empty-state">Dang tai san pham...</div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="admin-empty-state">Khong co san pham phu hop.</div>
         ) : (
           <>
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Tên</th>
-                    <th>Danh mục</th>
-                    <th>Giá</th>
-                    <th>Màu sắc</th>
-                    <th>Chiều rộng</th>
-                    <th>Chiều dài</th>
-                    <th>Tồn kho</th>
-                    <th>Thao tác</th>
+                    <th>Ten</th>
+                    <th>Danh muc</th>
+                    <th>Gia</th>
+                    <th>Mau</th>
+                    <th>Rong</th>
+                    <th>Dai</th>
+                    <th>Ton kho</th>
+                    <th>Thao tac</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -341,14 +470,9 @@ export default function AdminProductsPage() {
                     <tr key={product.id}>
                       <td>
                         <strong>{product.name}</strong>
-                        {product.description && (
-                          <div className="admin-table-subtext">{product.description}</div>
-                        )}
+                        {product.description && <div className="admin-table-subtext">{product.description}</div>}
                       </td>
-                      <td>
-                        {product.categoryName ||
-                          (product.categoryId ? categoryMap.get(product.categoryId) : "")}
-                      </td>
+                      <td>{product.categoryName || (product.categoryId ? categoryMap.get(product.categoryId) : "")}</td>
                       <td>{formatPrice(product.price)}</td>
                       <td>{product.color || "-"}</td>
                       <td>{product.width} cm</td>
@@ -359,19 +483,11 @@ export default function AdminProductsPage() {
                       </td>
                       <td>
                         <div className="d-flex gap-2 flex-wrap">
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-domora-outline"
-                            onClick={() => handleOpenRestock(product)}
-                          >
-                            Nhập hàng
+                          <button type="button" className="btn btn-sm btn-domora-outline" onClick={() => handleOpenRestock(product)}>
+                            Nhap hang
                           </button>
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-domora-outline"
-                            onClick={() => handleEditClick(product)}
-                          >
-                            Sửa
+                          <button type="button" className="btn btn-sm btn-domora-outline" onClick={() => handleEditClick(product)}>
+                            Sua
                           </button>
                           <button
                             type="button"
@@ -379,7 +495,7 @@ export default function AdminProductsPage() {
                             disabled={pendingDeleteId === product.id}
                             onClick={() => handleDelete(product.id)}
                           >
-                            {pendingDeleteId === product.id ? "Đang xóa..." : "Xóa"}
+                            {pendingDeleteId === product.id ? "Dang xoa..." : "Xoa"}
                           </button>
                         </div>
                       </td>
@@ -388,37 +504,24 @@ export default function AdminProductsPage() {
                 </tbody>
               </table>
             </div>
-            <Pagination
-              currentPage={safePage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
+            <Pagination currentPage={safePage} totalPages={totalPages} onPageChange={setCurrentPage} />
           </>
         )}
       </div>
 
-      <AdminFormModal
-        title={editingProductId ? "Cập nhật sản phẩm" : "Thêm sản phẩm"}
-        open={isFormModalOpen}
-        onClose={closeProductModal}
-      >
+      <AdminFormModal title={editingProductId ? "Cap nhat san pham" : "Them san pham"} open={isFormModalOpen} onClose={closeProductModal}>
         <form className="admin-form" onSubmit={handleSubmit}>
           {error && <div className="alert alert-danger">{error}</div>}
 
           <div className="mb-3">
-            <label className="form-label">Tên sản phẩm</label>
+            <label className="form-label">Ten san pham</label>
             <input className="form-control" name="name" value={form.name} onChange={handleProductInputChange} />
           </div>
 
           <div className="mb-3">
-            <label className="form-label">Danh mục</label>
-            <select
-              className="form-select"
-              name="categoryId"
-              value={form.categoryId}
-              onChange={handleProductInputChange}
-            >
-              <option value="">Chọn danh mục</option>
+            <label className="form-label">Danh muc</label>
+            <select className="form-select" name="categoryId" value={form.categoryId} onChange={handleProductInputChange}>
+              <option value="">Chon danh muc</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
@@ -428,59 +531,32 @@ export default function AdminProductsPage() {
           </div>
 
           <div className="mb-3">
-            <label className="form-label">Giá</label>
-            <input
-              className="form-control"
-              name="price"
-              type="number"
-              min="1"
-              value={form.price}
-              onChange={handleProductInputChange}
-            />
+            <label className="form-label">Gia</label>
+            <input className="form-control" name="price" type="number" min="1" value={form.price} onChange={handleProductInputChange} />
           </div>
 
           <div className="mb-3">
-            <label className="form-label">Hình ảnh</label>
-            <input
-              className="form-control"
-              name="image"
-              value={form.image}
-              onChange={handleProductInputChange}
-              placeholder="Tên file ảnh"
-            />
+            <label className="form-label">Hinh anh</label>
+            <input className="form-control" name="image" value={form.image} onChange={handleProductInputChange} />
           </div>
 
           <div className="row g-3">
             <div className="col-md-4">
-              <label className="form-label">Màu sắc</label>
+              <label className="form-label">Mau sac</label>
               <input className="form-control" name="color" value={form.color} onChange={handleProductInputChange} />
             </div>
             <div className="col-md-4">
-              <label className="form-label">Chiều rộng</label>
-              <input
-                className="form-control"
-                name="width"
-                type="number"
-                min="1"
-                value={form.width}
-                onChange={handleProductInputChange}
-              />
+              <label className="form-label">Chieu rong</label>
+              <input className="form-control" name="width" type="number" min="1" value={form.width} onChange={handleProductInputChange} />
             </div>
             <div className="col-md-4">
-              <label className="form-label">Chiều dài</label>
-              <input
-                className="form-control"
-                name="length"
-                type="number"
-                min="1"
-                value={form.length}
-                onChange={handleProductInputChange}
-              />
+              <label className="form-label">Chieu dai</label>
+              <input className="form-control" name="length" type="number" min="1" value={form.length} onChange={handleProductInputChange} />
             </div>
           </div>
 
           <div className="mt-3 mb-3">
-            <label className="form-label">Số lượng trong kho</label>
+            <label className="form-label">So luong trong kho</label>
             <input
               className="form-control"
               name="stockQuantity"
@@ -492,29 +568,76 @@ export default function AdminProductsPage() {
           </div>
 
           <div className="mb-4">
-            <label className="form-label">Mô tả</label>
-            <textarea
-              className="form-control"
-              name="description"
-              rows={4}
-              value={form.description}
-              onChange={handleProductInputChange}
-            />
+            <label className="form-label">Mo ta</label>
+            <textarea className="form-control" name="description" rows={4} value={form.description} onChange={handleProductInputChange} />
           </div>
 
           <div className="d-flex gap-2 flex-wrap">
             <button type="submit" className="btn btn-domora" disabled={submitting}>
-              {submitting ? "Đang lưu..." : editingProductId ? "Cập nhật sản phẩm" : "Tạo sản phẩm"}
+              {submitting ? "Dang luu..." : editingProductId ? "Cap nhat san pham" : "Tao san pham"}
             </button>
             <button type="button" className="btn btn-domora-outline" onClick={closeProductModal}>
-              Đóng
+              Dong
+            </button>
+          </div>
+        </form>
+      </AdminFormModal>
+
+      <AdminFormModal title="Nhap hang hang loat" open={isBulkRestockModalOpen} onClose={closeBulkRestockModal}>
+        <form className="admin-form" onSubmit={handleBulkRestockSubmit}>
+          {bulkError && <div className="alert alert-danger">{bulkError}</div>}
+
+          <div className="admin-bulk-restock-list">
+            {bulkRows.map((row, index) => (
+              <div key={row.rowId} className="admin-bulk-restock-row">
+                <select
+                  className="form-select"
+                  value={row.productId}
+                  onChange={(event) => handleBulkRowChange(row.rowId, "productId", event.target.value)}
+                >
+                  <option value="">Chon san pham</option>
+                  {products.map((product) => (
+                    <option key={product.id} value={product.id}>
+                      {product.name}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  className="form-control"
+                  type="number"
+                  min="1"
+                  value={row.quantity}
+                  onChange={(event) => handleBulkRowChange(row.rowId, "quantity", event.target.value)}
+                  placeholder="So luong"
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline-danger btn-sm"
+                  onClick={() => handleRemoveBulkRow(row.rowId)}
+                  disabled={bulkRows.length === 1}
+                >
+                  Xoa dong {index + 1}
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="d-flex gap-2 flex-wrap mt-3">
+            <button type="button" className="btn btn-domora-outline" onClick={handleAddBulkRow}>
+              Them dong
+            </button>
+            <button type="submit" className="btn btn-domora" disabled={bulkSubmitting}>
+              {bulkSubmitting ? "Dang nhap..." : "Xac nhan nhap hang hang loat"}
+            </button>
+            <button type="button" className="btn btn-domora-outline" onClick={closeBulkRestockModal}>
+              Dong
             </button>
           </div>
         </form>
       </AdminFormModal>
 
       <AdminFormModal
-        title={selectedRestockProduct ? `Nhập hàng: ${selectedRestockProduct.name}` : "Nhập hàng"}
+        title={selectedRestockProduct ? `Nhap hang: ${selectedRestockProduct.name}` : "Nhap hang"}
         open={isRestockModalOpen}
         onClose={closeRestockModal}
       >
@@ -522,14 +645,9 @@ export default function AdminProductsPage() {
           {restockError && <div className="alert alert-danger">{restockError}</div>}
 
           <div className="mb-3">
-            <label className="form-label">Sản phẩm</label>
-            <select
-              className="form-select"
-              name="productId"
-              value={restockForm.productId}
-              onChange={handleRestockInputChange}
-            >
-              <option value="">Chọn sản phẩm</option>
+            <label className="form-label">San pham</label>
+            <select className="form-select" name="productId" value={restockForm.productId} onChange={handleRestockInputChange}>
+              <option value="">Chon san pham</option>
               {products.map((product) => (
                 <option key={product.id} value={product.id}>
                   {product.name}
@@ -539,33 +657,25 @@ export default function AdminProductsPage() {
           </div>
 
           <div className="admin-restock-summary">
-            <strong>{selectedRestockProduct?.name || "Chưa chọn sản phẩm"}</strong>
+            <strong>{selectedRestockProduct?.name || "Chua chon san pham"}</strong>
             {selectedRestockProduct && (
               <p className="admin-table-subtext mb-0">
-                Tồn kho hiện tại: {selectedRestockProduct.stockQuantity} | Kích thước:{" "}
-                {formatDimensions(selectedRestockProduct)}
+                Ton kho hien tai: {selectedRestockProduct.stockQuantity} | Kich thuoc: {formatDimensions(selectedRestockProduct)}
               </p>
             )}
           </div>
 
           <div className="mb-4 mt-3">
-            <label className="form-label">Số lượng nhập thêm</label>
-            <input
-              className="form-control"
-              name="quantity"
-              type="number"
-              min="1"
-              value={restockForm.quantity}
-              onChange={handleRestockInputChange}
-            />
+            <label className="form-label">So luong nhap them</label>
+            <input className="form-control" name="quantity" type="number" min="1" value={restockForm.quantity} onChange={handleRestockInputChange} />
           </div>
 
           <div className="d-flex gap-2 flex-wrap">
             <button type="submit" className="btn btn-domora" disabled={restockSubmitting}>
-              {restockSubmitting ? "Đang nhập..." : "Xác nhận nhập hàng"}
+              {restockSubmitting ? "Dang nhap..." : "Xac nhan nhap hang"}
             </button>
             <button type="button" className="btn btn-domora-outline" onClick={closeRestockModal}>
-              Đóng
+              Dong
             </button>
           </div>
         </form>

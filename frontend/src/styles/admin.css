@@ -56,6 +56,8 @@
 }
 
 .admin-topbar {
+  position: relative;
+  z-index: 1200;
   display: flex;
   justify-content: flex-end;
   align-items: flex-start;
@@ -117,6 +119,7 @@
   position: absolute;
   top: calc(100% + 10px);
   right: 0;
+  z-index: 1300;
   width: min(360px, calc(100vw - 40px));
   padding: 16px;
   border-radius: 18px;
@@ -210,6 +213,7 @@
   position: absolute;
   top: calc(100% + 10px);
   right: 0;
+  z-index: 1300;
   min-width: 240px;
   display: grid;
   gap: 8px;
@@ -305,6 +309,25 @@
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.admin-filter-panel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-bulk-restock-list {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-bulk-restock-row {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr auto;
+  gap: 10px;
+  align-items: center;
 }
 
 .admin-empty-state {
@@ -858,6 +881,14 @@
 
   .admin-delivery-summary,
   .admin-delivery-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-filter-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-bulk-restock-row {
     grid-template-columns: 1fr;
   }
 

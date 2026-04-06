@@ -1,20 +1,38 @@
-import { type FormEvent, useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { type FormEvent, useEffect, useState } from "react";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { getApiErrorMessage, registerAccount } from "../../api/authApi";
 import { useAuth } from "../../hooks/useAuth";
+
+const REF_STORAGE_KEY = "register_referral_code";
 
 export default function RegisterPage() {
   const { auth, isLoading, login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loginName, setLoginName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isLoading && auth?.token) {
     return <Navigate to="/" replace />;
   }
+
+  useEffect(() => {
+    const fromQuery = (searchParams.get("ref") || "").trim().toUpperCase();
+    if (fromQuery) {
+      setReferralCode(fromQuery);
+      localStorage.setItem(REF_STORAGE_KEY, fromQuery);
+      return;
+    }
+
+    const fromStorage = (localStorage.getItem(REF_STORAGE_KEY) || "").trim().toUpperCase();
+    if (fromStorage) {
+      setReferralCode(fromStorage);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -41,7 +59,9 @@ export default function RegisterPage() {
       const response = await registerAccount({
         loginName: loginName.trim(),
         password,
+        referralCode: referralCode.trim() || undefined,
       });
+      localStorage.removeItem(REF_STORAGE_KEY);
 
       login({
         username: response.data.loginName,
@@ -99,7 +119,7 @@ export default function RegisterPage() {
                   required
                 />
               </div>
-              <div className="mb-4 text-start">
+              <div className="mb-3 text-start">
                 <label className="form-label auth-label">Xác nhận mật khẩu</label>
                 <input
                   type="password"
@@ -110,6 +130,11 @@ export default function RegisterPage() {
                   required
                 />
               </div>
+              {referralCode && (
+                <p className="text-start small text-muted mb-4">
+                  Dang ap dung ma gioi thieu tu link: <strong>{referralCode}</strong>
+                </p>
+              )}
 
               <button type="submit" className="btn auth-btn w-100 shadow-sm" disabled={isSubmitting}>
                 {isSubmitting ? "ĐANG XỬ LÝ..." : "ĐĂNG KÝ TÀI KHOẢN"}

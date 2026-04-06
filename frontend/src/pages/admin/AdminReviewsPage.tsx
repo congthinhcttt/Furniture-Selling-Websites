@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { type ChangeEvent, useEffect, useState } from "react";
 import { getApiErrorMessage } from "../../api/authApi";
 import {
   approveAdminReview,
@@ -30,6 +30,7 @@ export default function AdminReviewsPage() {
   const [selectedReview, setSelectedReview] = useState<AdminReview | null>(null);
   const [note, setNote] = useState("");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const loadReviews = async (nextFilters: AdminReviewQueryParams) => {
     try {
@@ -40,7 +41,7 @@ export default function AdminReviewsPage() {
       setTotalPages(response.totalPages || 1);
       setTotalItems(response.totalItems);
     } catch (err) {
-      setError(getApiErrorMessage(err, "Không thể tải danh sách đánh giá quản trị."));
+      setError(getApiErrorMessage(err, "Khong the tai danh sach danh gia quan tri."));
     } finally {
       setLoading(false);
     }
@@ -56,7 +57,7 @@ export default function AdminReviewsPage() {
       setSelectedReview(detail);
       setNote(detail.adminNote || "");
     } catch (err) {
-      setError(getApiErrorMessage(err, "Không thể tải chi tiết đánh giá."));
+      setError(getApiErrorMessage(err, "Khong the tai chi tiet danh gia."));
     }
   };
 
@@ -74,29 +75,29 @@ export default function AdminReviewsPage() {
       }
 
       if (updated) {
-        setReviews((current) => current.map((review) => (review.id === reviewId ? updated! : review)));
+        setReviews((current) => current.map((review) => (review.id === reviewId ? updated : review)));
         setSelectedReview(updated);
       } else {
         setReviews((current) => current.filter((review) => review.id !== reviewId));
         setSelectedReview(null);
       }
     } catch (err) {
-      setError(getApiErrorMessage(err, "Không thể cập nhật trạng thái đánh giá."));
+      setError(getApiErrorMessage(err, "Khong the cap nhat trang thai danh gia."));
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleFilterChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const handleFilterChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = event.target;
     setFilters((current) => ({
       ...current,
       page: 1,
       [name]:
         name === "rating" || name === "productId" || name === "userId"
-          ? (value ? Number(value) : undefined)
+          ? value
+            ? Number(value)
+            : undefined
           : value,
     }));
   };
@@ -105,40 +106,41 @@ export default function AdminReviewsPage() {
     <section className="admin-page">
       <div className="admin-page-header">
         <div>
-          <p className="admin-page-kicker">Đánh giá</p>
-          <h1 className="admin-page-title">Quản lý review sản phẩm</h1>
-          <p className="admin-page-desc">
-            Kiểm duyệt đánh giá, ẩn nội dung không phù hợp và theo dõi chất lượng phản hồi khách hàng.
-          </p>
+          <p className="admin-page-kicker">Danh gia</p>
+          <h1 className="admin-page-title">Quan ly review san pham</h1>
+          <p className="admin-page-desc">Kiem duyet review va theo doi chat luong phan hoi khach hang.</p>
         </div>
       </div>
 
       <div className="admin-panel">
         <div className="admin-panel-head">
-          <h2>Danh sách review</h2>
-          <div className="admin-panel-actions admin-review-filters">
+          <h2>Danh sach review</h2>
+          <div className="admin-panel-actions">
+            <button type="button" className="btn btn-domora-outline" onClick={() => setIsFilterOpen((current) => !current)}>
+              Loc
+            </button>
+          </div>
+        </div>
+
+        {isFilterOpen && (
+          <div className="admin-filter-panel">
             <input
               className="form-control"
               name="keyword"
               value={filters.keyword || ""}
-              placeholder="Tìm theo sản phẩm, user, tiêu đề"
+              placeholder="Tim theo san pham, user, tieu de"
               onChange={handleFilterChange}
             />
             <select className="form-select" name="status" value={filters.status || ""} onChange={handleFilterChange}>
-              <option value="">Tất cả trạng thái</option>
+              <option value="">Tat ca trang thai</option>
               {["PENDING", "APPROVED", "REJECTED", "HIDDEN"].map((status) => (
                 <option key={status} value={status}>
                   {status}
                 </option>
               ))}
             </select>
-            <select
-              className="form-select"
-              name="rating"
-              value={filters.rating || ""}
-              onChange={handleFilterChange}
-            >
-              <option value="">Tất cả số sao</option>
+            <select className="form-select" name="rating" value={filters.rating || ""} onChange={handleFilterChange}>
+              <option value="">Tat ca so sao</option>
               {[5, 4, 3, 2, 1].map((value) => (
                 <option key={value} value={value}>
                   {value} sao
@@ -146,27 +148,27 @@ export default function AdminReviewsPage() {
               ))}
             </select>
           </div>
-        </div>
+        )}
 
         {loading ? (
-          <div className="admin-empty-state">Đang tải review...</div>
+          <div className="admin-empty-state">Dang tai review...</div>
         ) : error ? (
           <div className="admin-empty-state">{error}</div>
         ) : reviews.length === 0 ? (
-          <div className="admin-empty-state">Chưa có review nào phù hợp.</div>
+          <div className="admin-empty-state">Chua co review nao phu hop.</div>
         ) : (
           <>
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Sản phẩm</th>
-                    <th>Người dùng</th>
+                    <th>San pham</th>
+                    <th>Nguoi dung</th>
                     <th>Sao</th>
-                    <th>Trạng thái</th>
-                    <th>Hữu ích</th>
-                    <th>Ngày tạo</th>
-                    <th>Thao tác</th>
+                    <th>Trang thai</th>
+                    <th>Huu ich</th>
+                    <th>Ngay tao</th>
+                    <th>Thao tac</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -191,21 +193,13 @@ export default function AdminReviewsPage() {
                 </tbody>
               </table>
             </div>
-            <Pagination
-              currentPage={filters.page || 1}
-              totalPages={totalPages}
-              onPageChange={(page) => setFilters((current) => ({ ...current, page }))}
-            />
-            <div className="admin-table-subtext mt-3">Tổng cộng {totalItems} review.</div>
+            <Pagination currentPage={filters.page || 1} totalPages={totalPages} onPageChange={(page) => setFilters((current) => ({ ...current, page }))} />
+            <div className="admin-table-subtext mt-3">Tong cong {totalItems} review.</div>
           </>
         )}
       </div>
 
-      <AdminFormModal
-        title={selectedReview ? `Review #${selectedReview.id}` : "Chi tiết review"}
-        open={Boolean(selectedReview)}
-        onClose={() => setSelectedReview(null)}
-      >
+      <AdminFormModal title={selectedReview ? `Review #${selectedReview.id}` : "Chi tiet review"} open={Boolean(selectedReview)} onClose={() => setSelectedReview(null)}>
         {selectedReview && (
           <div className="admin-review-detail">
             <div className="admin-review-detail__meta">
@@ -217,11 +211,11 @@ export default function AdminReviewsPage() {
             </div>
 
             <div className="admin-review-detail__scores">
-              <span>Tổng thể: {selectedReview.overallRating}/5</span>
-              <span>Chất lượng: {selectedReview.qualityRating}/5</span>
-              <span>Thiết kế: {selectedReview.designRating}/5</span>
-              <span>Tiện nghi: {selectedReview.comfortRating}/5</span>
-              <span>Đáng tiền: {selectedReview.valueRating}/5</span>
+              <span>Tong the: {selectedReview.overallRating}/5</span>
+              <span>Chat luong: {selectedReview.qualityRating}/5</span>
+              <span>Thiet ke: {selectedReview.designRating}/5</span>
+              <span>Tien nghi: {selectedReview.comfortRating}/5</span>
+              <span>Dang tien: {selectedReview.valueRating}/5</span>
             </div>
 
             <h3>{selectedReview.title}</h3>
@@ -236,52 +230,27 @@ export default function AdminReviewsPage() {
             )}
 
             <div className="mb-3 mt-3">
-              <label className="form-label">Ghi chú quản trị</label>
-              <textarea
-                className="form-control"
-                rows={3}
-                value={note}
-                onChange={(event) => setNote(event.target.value)}
-              />
+              <label className="form-label">Ghi chu quan tri</label>
+              <textarea className="form-control" rows={3} value={note} onChange={(event) => setNote(event.target.value)} />
             </div>
 
             <div className="d-flex gap-2 flex-wrap">
-              <button
-                type="button"
-                className="btn btn-domora"
-                disabled={actionLoading === selectedReview.id}
-                onClick={() => handleModeration(selectedReview.id, "approve")}
-              >
-                Duyệt
+              <button type="button" className="btn btn-domora" disabled={actionLoading === selectedReview.id} onClick={() => handleModeration(selectedReview.id, "approve")}>
+                Duyet
               </button>
               <button
                 type="button"
                 className="btn btn-domora-outline"
                 disabled={actionLoading === selectedReview.id}
-                onClick={() =>
-                  handleModeration(
-                    selectedReview.id,
-                    (selectedReview.status === "HIDDEN" ? "unhide" : "hide") as "hide" | "unhide"
-                  )
-                }
+                onClick={() => handleModeration(selectedReview.id, (selectedReview.status === "HIDDEN" ? "unhide" : "hide") as "hide" | "unhide")}
               >
-                {selectedReview.status === "HIDDEN" ? "Hiện lại" : "Ẩn"}
+                {selectedReview.status === "HIDDEN" ? "Hien lai" : "An"}
               </button>
-              <button
-                type="button"
-                className="btn btn-outline-danger"
-                disabled={actionLoading === selectedReview.id}
-                onClick={() => handleModeration(selectedReview.id, "reject")}
-              >
-                Từ chối
+              <button type="button" className="btn btn-outline-danger" disabled={actionLoading === selectedReview.id} onClick={() => handleModeration(selectedReview.id, "reject")}>
+                Tu choi
               </button>
-              <button
-                type="button"
-                className="btn btn-outline-dark"
-                disabled={actionLoading === selectedReview.id}
-                onClick={() => handleModeration(selectedReview.id, "delete")}
-              >
-                Xóa mềm
+              <button type="button" className="btn btn-outline-dark" disabled={actionLoading === selectedReview.id} onClick={() => handleModeration(selectedReview.id, "delete")}>
+                Xoa mem
               </button>
             </div>
           </div>

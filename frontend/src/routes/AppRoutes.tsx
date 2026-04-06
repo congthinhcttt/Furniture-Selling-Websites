@@ -3,6 +3,7 @@ import ProtectedRoute from "../components/auth/ProtectedRoute";
 import AdminLayout from "../layouts/AdminLayout";
 import UserLayout from "../layouts/UserLayout";
 import AdminAccountsPage from "../pages/admin/AdminAccountsPage";
+import AdminAffiliateConfigPage from "../pages/admin/AdminAffiliateConfigPage";
 import AdminCategoriesPage from "../pages/admin/AdminCategoriesPage";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
 import AdminNewsPage from "../pages/admin/AdminNewsPage";
@@ -79,6 +80,7 @@ export default function AppRoutes() {
             <Route path="categories" element={<AdminCategoriesPage />} />
             <Route path="news" element={<AdminNewsPage />} />
             <Route path="accounts" element={<AdminAccountsPage />} />
+            <Route path="affiliate-config" element={<AdminAffiliateConfigPage />} />
           </Route>
         </Route>
       </Routes>

@@ -19,6 +19,7 @@ interface LoginPayload {
 interface RegisterPayload {
   loginName: string;
   password: string;
+  referralCode?: string;
 }
 
 export { GOOGLE_LOGIN_URL };

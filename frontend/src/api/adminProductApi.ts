@@ -22,6 +22,15 @@ export interface ProductRestockPayload {
   quantity: number;
 }
 
+export interface ProductBulkRestockItemPayload {
+  productId: number;
+  quantity: number;
+}
+
+export interface ProductBulkRestockPayload {
+  items: ProductBulkRestockItemPayload[];
+}
+
 export async function getAdminProducts() {
   const response = await axiosClient.get<ApiResponse<Product[]>>("/api/admin/products");
   return response.data.data;
@@ -43,6 +52,14 @@ export async function updateAdminProduct(productId: number, payload: AdminProduc
 export async function restockAdminProduct(productId: number, payload: ProductRestockPayload) {
   const response = await axiosClient.post<ApiResponse<Product>>(
     `/api/admin/products/${productId}/restock`,
+    payload
+  );
+  return response.data.data;
+}
+
+export async function restockAdminProductsBulk(payload: ProductBulkRestockPayload) {
+  const response = await axiosClient.post<ApiResponse<Product[]>>(
+    "/api/admin/products/restock/bulk",
     payload
   );
   return response.data.data;

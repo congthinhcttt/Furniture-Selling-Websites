@@ -106,6 +106,9 @@ export default function AdminLayout() {
           <NavLink className="admin-nav-link" to="/admin/accounts">
             Tài khoản
           </NavLink>
+          <NavLink className="admin-nav-link" to="/admin/affiliate-config">
+            Affiliate
+          </NavLink>
         </nav>
       </aside>
 
