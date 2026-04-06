@@ -37,6 +37,16 @@ public class Account {
     @Column(name = "auth_provider", nullable = false, length = 30)
     private String authProvider = "LOCAL";
 
+    @Column(name = "referral_code", unique = true, length = 8)
+    private String referralCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "referred_by_account_id")
+    private Account referredBy;
+
+    @Column(name = "affiliate_rewarded", nullable = false)
+    private Boolean affiliateRewarded = false;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "account_role",

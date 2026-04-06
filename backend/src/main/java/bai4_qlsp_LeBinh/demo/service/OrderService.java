@@ -74,7 +74,7 @@ public class OrderService {
 
         VoucherApplyResponse appliedVoucher = null;
         if (request.getVoucherCode() != null && !request.getVoucherCode().isBlank()) {
-            appliedVoucher = voucherService.applyVoucher(request.getVoucherCode(), subtotalAmount);
+            appliedVoucher = voucherService.applyVoucher(request.getVoucherCode(), subtotalAmount, accountId);
         }
 
         long discountAmount = appliedVoucher != null ? appliedVoucher.getDiscountAmount() : 0L;

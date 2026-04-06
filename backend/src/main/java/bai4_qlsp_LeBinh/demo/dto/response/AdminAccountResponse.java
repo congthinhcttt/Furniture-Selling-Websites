@@ -12,5 +12,9 @@ import lombok.NoArgsConstructor;
 public class AdminAccountResponse {
     private Integer id;
     private String loginName;
+    private String email;
     private String role;
+    private String referralCode;
+    private Integer referredByUserId;
+    private long successfulReferralCount;
 }

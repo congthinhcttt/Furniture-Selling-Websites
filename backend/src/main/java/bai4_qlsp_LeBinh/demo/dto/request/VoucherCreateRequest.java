@@ -16,6 +16,7 @@ public class VoucherCreateRequest {
 
     private String code;
     private String name;
+    private String description;
     private VoucherDiscountType discountType;
     private Long discountValue;
     private Long minOrderValue;

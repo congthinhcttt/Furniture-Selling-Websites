@@ -17,6 +17,7 @@ public class VoucherResponse {
     private Long id;
     private String code;
     private String name;
+    private String description;
     private VoucherDiscountType discountType;
     private Long discountValue;
     private Long minOrderValue;

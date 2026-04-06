@@ -1,6 +1,7 @@
 package bai4_qlsp_LeBinh.demo.entity;
 
 import bai4_qlsp_LeBinh.demo.enums.VoucherDiscountType;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -8,6 +9,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -33,6 +36,9 @@ public class Voucher {
 
     @Column(nullable = false, length = 255)
     private String name;
+
+    @Column(length = 255)
+    private String description;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "discount_type", nullable = false, length = 20)
@@ -62,6 +68,16 @@ public class Voucher {
     @Column(nullable = false)
     private Boolean active = true;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_for_user_id")
+    private Account createdForUser;
+
+    @Column(name = "source", nullable = false, length = 30)
+    private String source = "ADMIN";
+
+    @Column(name = "affiliate_referral_id")
+    private Long affiliateReferralId;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -81,6 +97,9 @@ public class Voucher {
         }
         if (active == null) {
             active = true;
+        }
+        if (source == null || source.isBlank()) {
+            source = "ADMIN";
         }
     }
 

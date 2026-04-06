@@ -14,5 +14,9 @@ public interface VoucherRepository extends JpaRepository<Voucher, Long> {
 
     boolean existsByCode(String code);
 
+    boolean existsBySourceAndCreatedForUser_Id(String source, Integer userId);
+
     List<Voucher> findAllByActiveTrueOrderByCreatedAtDesc();
+
+    List<Voucher> findAllByActiveTrueAndCreatedForUser_IdOrderByCreatedAtDesc(Integer userId);
 }

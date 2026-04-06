@@ -2,6 +2,7 @@ package bai4_qlsp_LeBinh.demo.controller.admin;
 
 import bai4_qlsp_LeBinh.demo.dto.request.ProductCreateRequest;
 import bai4_qlsp_LeBinh.demo.dto.request.ProductFilterRequest;
+import bai4_qlsp_LeBinh.demo.dto.request.ProductBulkRestockRequest;
 import bai4_qlsp_LeBinh.demo.dto.request.ProductRestockRequest;
 import bai4_qlsp_LeBinh.demo.dto.request.ProductUpdateRequest;
 import bai4_qlsp_LeBinh.demo.dto.response.ApiResponse;
@@ -92,6 +93,19 @@ public class AdminProductController {
                         .success(true)
                         .message("Nhap hang thanh cong")
                         .data(productService.restockProduct(id, request.getQuantity()))
+                        .build()
+        );
+    }
+
+    @PostMapping("/restock/bulk")
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> restockProductsBulk(
+            @Valid @RequestBody ProductBulkRestockRequest request
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.<List<ProductResponse>>builder()
+                        .success(true)
+                        .message("Nhap hang hang loat thanh cong")
+                        .data(productService.restockProductsBulk(request))
                         .build()
         );
     }

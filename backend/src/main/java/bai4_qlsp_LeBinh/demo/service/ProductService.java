@@ -1,6 +1,7 @@
 package bai4_qlsp_LeBinh.demo.service;
 
 import bai4_qlsp_LeBinh.demo.dto.request.CompareProductsRequest;
+import bai4_qlsp_LeBinh.demo.dto.request.ProductBulkRestockRequest;
 import bai4_qlsp_LeBinh.demo.dto.request.ProductCreateRequest;
 import bai4_qlsp_LeBinh.demo.dto.request.ProductFilterRequest;
 import bai4_qlsp_LeBinh.demo.dto.request.ProductUpdateRequest;
@@ -170,6 +171,34 @@ public class ProductService {
         Product product = getProductEntityById(id);
         product.setStockQuantity(product.getStockQuantity() + quantity);
         return mapToResponse(productRepository.save(product));
+    }
+
+    @Transactional
+    public List<ProductResponse> restockProductsBulk(ProductBulkRestockRequest request) {
+        if (request == null || request.getItems() == null || request.getItems().isEmpty()) {
+            throw new BadRequestException("Danh sach nhap hang khong hop le");
+        }
+
+        Map<Long, Integer> quantityByProductId = new LinkedHashMap<>();
+        List<ProductResponse> updatedProducts = new ArrayList<>();
+
+        for (var item : request.getItems()) {
+            if (item.getProductId() == null) {
+                throw new BadRequestException("Product id khong duoc de trong");
+            }
+            if (item.getQuantity() == null || item.getQuantity() <= 0) {
+                throw new BadRequestException("So luong nhap phai lon hon 0");
+            }
+            quantityByProductId.merge(item.getProductId(), item.getQuantity(), Integer::sum);
+        }
+
+        for (Map.Entry<Long, Integer> entry : quantityByProductId.entrySet()) {
+            Product product = getProductEntityById(entry.getKey());
+            product.setStockQuantity(product.getStockQuantity() + entry.getValue());
+            updatedProducts.add(mapToResponse(productRepository.save(product)));
+        }
+
+        return updatedProducts;
     }
 
     public void deleteProduct(Long id) {
